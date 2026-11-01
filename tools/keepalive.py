@@ -27,12 +27,27 @@ with sync_playwright() as p:
         btn.first.click()
         woke = True
         print("app was asleep; pressed the wake-up button")
+    def rendered() -> bool:
+        # On Community Cloud the app itself lives in an iframe, so look through every frame.
+        for frame in page.frames:
+            try:
+                if MARK in frame.inner_text("body", timeout=2000):
+                    return True
+            except Exception:
+                pass
+        return False
+
     deadline = time.time() + 240
     ok = False
     while time.time() < deadline:
-        if MARK in page.inner_text("body"):
+        if rendered():
             ok = True
             break
+        btn = page.get_by_role("button", name="Yes, get this app back up!")
+        if btn.count():
+            btn.first.click()
+            woke = True
+            print("app was asleep; pressed the wake-up button")
         page.wait_for_timeout(3000)
     page.screenshot(path="keepalive.png")
     browser.close()
