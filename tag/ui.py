@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+from functools import lru_cache
 from pathlib import Path
 
 import streamlit as st
@@ -30,6 +31,11 @@ def img_uri(name: str) -> str:
 @st.cache_data(show_spinner=False)
 def sound_bytes(name: str) -> bytes:
     return (SOUNDS / name).read_bytes()
+
+
+@lru_cache(maxsize=None)
+def sound_uri(name: str) -> str:
+    return "data:audio/mpeg;base64," + base64.b64encode(sound_bytes(name)).decode()
 
 
 BASE_CSS = """
@@ -143,7 +149,7 @@ HOME_SVG = ('<img src="data:image/svg+xml;base64,' + base64.b64encode(_HOME.enco
 
 # Streamlit Community Cloud shows the app inside an iframe, and st.html drops target attributes,
 # so internal links are sent to the top window by hand. The timer's own Home link asks for it by message.
-TOP_NAV_JS = """
+TOP_NAV_JS = r"""
 <script>
 (function () {
   if (window.__fosNav) { return; }
@@ -204,8 +210,13 @@ def music(track: str, default: bool = False, label: str = "Music"):
 
 
 def play(slot, track: str):
-    """Play a one-shot sound in a given st.empty() slot."""
-    slot.audio(sound_bytes(track), format="audio/mp3", autoplay=True)
+    """Play a one-shot sound in a given st.empty() slot.
+
+    Not st.audio: two identical st.audio calls in one run (two drumrolls in one attack) share an element id and
+    Streamlit refuses the second. A plain <audio autoplay> tag with a running number never collides."""
+    n = st.session_state.get("sfx_n", 0) + 1
+    st.session_state["sfx_n"] = n
+    slot.html(f'<audio autoplay preload="auto" data-n="{n}" src="{sound_uri(track)}"></audio>')
 
 
 def kpi(items: list[tuple[str, str]]) -> str:
