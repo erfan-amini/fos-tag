@@ -38,11 +38,6 @@ def tpt_people(room: dict) -> list[dict]:
 
 def _dot_panel(fig, rows: list[dict], key: str, col: int, big: bool):
     vals = [r[key] for r in rows]
-    if not vals:
-        fig.add_annotation(text="Waiting for the first numbers…", xref=f"x{col if col > 1 else ''} domain",
-                           yref=f"y{col if col > 1 else ''} domain", x=0.5, y=0.5, showarrow=False,
-                           font=dict(size=20 if big else 14, color=MUTED))
-        return
     lo, hi = min(vals), max(vals)
     w = nice_bin(min(lo, 0 if key == "thumb" else lo), hi, 14 if big else 10)
     pos = dot_stack(vals, w)
@@ -81,10 +76,16 @@ def _dot_panel(fig, rows: list[dict], key: str, col: int, big: bool):
 
 def tpt_figure(rows: list[dict], big: bool = True) -> go.Figure:
     fig = make_subplots(rows=1, cols=2, subplot_titles=("Thumb", "Forearm"), horizontal_spacing=0.07)
-    _dot_panel(fig, rows, "thumb", 1, big)
-    _dot_panel(fig, rows, "forearm", 2, big)
     for a in fig.layout.annotations[:2]:
         a.font = dict(size=26 if big else 16, color=NAVY, family=FONT)
+    if not rows:
+        fig.add_annotation(text="Waiting for the first numbers…", xref="paper", yref="paper", x=0.5, y=0.45,
+                           showarrow=False, font=dict(size=22 if big else 14, color=MUTED))
+        fig.update_xaxes(visible=False)
+        fig.update_yaxes(visible=False)
+    else:
+        _dot_panel(fig, rows, "thumb", 1, big)
+        _dot_panel(fig, rows, "forearm", 2, big)
     fig.update_layout(height=500 if big else 300, margin=dict(l=20, r=20, t=60, b=50), paper_bgcolor="white",
                       plot_bgcolor="white", font=dict(family=FONT, size=16 if big else 12, color=INK),
                       showlegend=False, hovermode="closest")
