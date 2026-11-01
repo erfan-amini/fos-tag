@@ -70,6 +70,14 @@ def _tpt_frame(rows: list[dict]):
     return th, fa, top, xmax, ymax
 
 
+def _symbols(fig, pts: list[tuple[float, float, str, str]], sizex: float, sizey: float):
+    """Place each (x, y, icon, colour) as an image on the plot. Plotly has no custom marker shapes, so the symbols
+    are the picker's SVGs with a white halo; `contain` keeps their aspect inside the sizex-by-sizey box."""
+    for x, y, key, color in pts:
+        fig.add_layout_image(source=icons.data_uri(key, color, halo=7), x=x, y=y, xref="x", yref="y", sizex=sizex,
+                             sizey=sizey, xanchor="center", yanchor="middle", sizing="contain", layer="above")
+
+
 def _rgba(hexcolor: str, a: float) -> str:
     h = hexcolor.lstrip("#")
     return f"rgba({int(h[:2], 16)},{int(h[2:4], 16)},{int(h[4:], 16)},{a})"
@@ -94,20 +102,14 @@ def tpt_figure(rows: list[dict], big: bool = True, show_stats: bool = False) -> 
                 marker=dict(color=color, line=dict(color="white", width=1)), opacity=alpha,
                 customdata=[[b * BIN, (b + 1) * BIN] for b in bins],
                 hovertemplate=name.split()[0] + ": %{y} students<br>%{customdata[0]:g} to %{customdata[1]:g} mm<extra></extra>"))
-        area = (520 - 120) if big else (300 - 80)          # plot height in px, roughly
-        ms = max(8 if big else 6, min(22 if big else 13, 0.68 * area / ymax))
         for key, frac in (("thumb", 0.27), ("forearm", 0.73)):
             pos = _stack(rows, key, frac)
-            by_pair: dict[str, list[int]] = {}
-            for i, r in enumerate(rows):
-                by_pair.setdefault(r["pair"], []).append(i)
-            for label, idx in by_pair.items():
-                r0 = rows[idx[0]]
-                fig.add_trace(go.Scatter(
-                    x=[pos[i][0] for i in idx], y=[pos[i][1] for i in idx], mode="markers", name=label, showlegend=False,
-                    marker=dict(symbol=icons.PLOTLY[r0["icon"]], color=r0["color"], size=ms, line=dict(width=1, color="white")),
-                    customdata=[[rows[i]["name"], rows[i]["pair"], rows[i][key]] for i in idx],
-                    hovertemplate="%{customdata[0]} (%{customdata[1]})<br>" + key + " %{customdata[2]:.2f} mm<extra></extra>"))
+            _symbols(fig, [(x, y, r["icon"], r["color"]) for r, (x, y) in zip(rows, pos)], sizex=0.46 * BIN, sizey=1.0)
+            fig.add_trace(go.Scatter(                       # invisible markers carry the hover text
+                x=[x for x, _ in pos], y=[y for _, y in pos], mode="markers", name=key, showlegend=False,
+                marker=dict(size=16 if big else 10, color="rgba(0,0,0,0)"),
+                customdata=[[r["name"], r["pair"], r[key]] for r in rows],
+                hovertemplate="%{customdata[0]} (%{customdata[1]})<br>" + key + " %{customdata[2]:.2f} mm<extra></extra>"))
         if show_stats:
             for key, color, dark, side in (("thumb", THUMB, THUMB_D, "left"), ("forearm", FOREARM, FOREARM_D, "right")):
                 s = summary([r[key] for r in rows])
@@ -151,10 +153,10 @@ def tpt_png(rows: list[dict], title: str = "", show_stats: bool = False) -> byte
             bins = sorted(counts)
             ax.bar([(b + 0.5) * BIN for b in bins], [counts[b] for b in bins], width=BIN, color=color, alpha=alpha,
                    edgecolor="white", linewidth=1, label=name)
-        ms = max(4.5, min(13.0, 0.62 * 300 / ymax))
+        ms = max(5.0, min(14.0, 0.66 * 300 / ymax))
         for key, frac in (("thumb", 0.27), ("forearm", 0.73)):
             for r, (x, y) in zip(rows, _stack(rows, key, frac)):
-                ax.plot(x, y, marker=icons.MPL[r["icon"]], color=r["color"], ms=ms, ls="", mec="white", mew=0.6)
+                ax.plot(x, y, marker=icons.mpl_path(r["icon"]), color=r["color"], ms=ms, ls="", mec="white", mew=0.6)
         if show_stats:
             for key, color, dark in (("thumb", THUMB, THUMB_D), ("forearm", FOREARM, FOREARM_D)):
                 s = summary([r[key] for r in rows])
@@ -212,19 +214,17 @@ def _formula(t: float) -> str:
 def balloon_figure(rows: list[dict], trend: bool = True, big: bool = True, t: float = 10.0) -> go.Figure:
     """The slide's scatter: velocity away from home against final distance, best-fit line through the origin."""
     fig = go.Figure()
-    by_pair: dict[str, list[dict]] = {}
-    for r in rows:
-        by_pair.setdefault(r["pair"], []).append(r)
-    ms = 18 if big else 12
-    for label, pts in by_pair.items():
-        fig.add_trace(go.Scatter(
-            x=[r["final"] for r in pts], y=[r["v"] for r in pts], mode="markers", name=label,
-            marker=dict(symbol=icons.PLOTLY[pts[0]["icon"]], color=pts[0]["color"], size=ms, line=dict(width=1.2, color="white")),
-            customdata=[[r["pair"], r["dot"], r["init"], r["final"]] for r in pts],
+    if rows:
+        fig.add_trace(go.Scatter(                           # invisible markers carry the hover text
+            x=[r["final"] for r in rows], y=[r["v"] for r in rows], mode="markers", name="dots", showlegend=False,
+            marker=dict(size=18 if big else 12, color="rgba(0,0,0,0)"),
+            customdata=[[r["pair"], r["dot"], r["init"], r["final"]] for r in rows],
             hovertemplate="%{customdata[0]}, dot %{customdata[1]}<br>final %{x:.0f} mm, velocity %{y:.2f} mm/s"
                           "<br>initial %{customdata[2]:.0f} mm<extra></extra>"))
     if rows:
         xmax, ymax, ymin = _balloon_frame(rows)
+        f_y = 0.065 if big else 0.1
+        _symbols(fig, [(r["final"], r["v"], r["icon"], r["color"]) for r in rows], sizex=xmax * 0.06, sizey=(ymax - ymin) * f_y)
     else:
         xmax, ymax, ymin = 500, 50, 0
         fig.add_annotation(text="Waiting for the first dots…", x=0.5, y=0.5, xref="paper", yref="paper", showarrow=False,
@@ -259,7 +259,7 @@ def balloon_png(rows: list[dict], title: str = "", trend: bool = True, t: float 
     for r in rows:
         lab = r["pair"] if r["pair"] not in seen else None
         seen.add(r["pair"])
-        ax.plot(r["final"], r["v"], marker=icons.MPL[r["icon"]], color=r["color"], ms=10, ls="", mec="white", mew=0.8, label=lab)
+        ax.plot(r["final"], r["v"], marker=icons.mpl_path(r["icon"]), color=r["color"], ms=11, ls="", mec="white", mew=0.8, label=lab)
     if rows:
         xmax, ymax, ymin = _balloon_frame(rows)
         if trend and len(rows) >= 2:

@@ -137,7 +137,7 @@ def _tile_grid(keys: list[str], chosen: str | None, taken: dict, color: str, row
             for col, k in zip(cols, row):
                 state = "taken" if k in taken else ("on" if k == chosen else "off")
                 with col, st.container(key=f"tile_{k}_{state}"):
-                    st.html(f'<div class="tile-in">{icons.svg(k, color if state != "taken" else "#B8C0CC", 44)}'
+                    st.html(f'<div class="tile-in">{icons.svg(k, color if state != "taken" else "#B8C0CC", 40)}'
                             f'<div class="tile-name">{icons.LABEL[k]}</div></div>')
                     # the button is invisible and covers the whole tile, so a tap on the symbol works too
                     if st.button(icons.LABEL[k], key=f"pick_{k}", disabled=(state == "taken"), width="stretch",
@@ -181,7 +181,7 @@ def join_form(room: dict, path: str) -> dict | None:
     st.html('<div class="p-head">1 · Your colour</div>')
     _swatches(color)
     st.html('<div class="p-head">2 · Your symbol</div>')
-    _tile_grid(icons.KEYS, chosen, taken, color, 4)
+    _tile_grid(icons.KEYS, chosen, taken, color, 5)
     if chosen:
         st.html(f'<div class="mean-line">You will appear as {icons.badge(chosen, color, " & ".join(n for n in names if n.strip()) or "…")}</div>')
     if existing:

@@ -108,7 +108,8 @@ def test_tpt_people_plot_and_export(tmp_path):
     bars = [tr for tr in fig.data if tr.type == "bar"]
     assert [tr.name for tr in bars] == ["Thumb (mm)", "Forearm (mm)"]
     assert sum(bars[0].y) == 8 and sum(bars[1].y) == 8          # one count per student in each
-    assert len([tr for tr in fig.data if tr.type == "scatter"]) == 8   # one symbol trace per pair, thumb and forearm
+    assert len([tr for tr in fig.data if tr.type == "scatter"]) == 2   # hover carriers for thumb and forearm
+    assert len(fig.layout.images) == 16                                  # one symbol image per student per part
     fig2 = plots.tpt_figure(rows, show_stats=True)
     assert len(fig2.layout.shapes) == 4                           # two bands, two mean lines
     png = plots.tpt_png(rows, "test")
@@ -141,7 +142,10 @@ def test_balloon_points_and_export(tmp_path):
 
 
 def test_symbols_are_consistent():
-    assert len(icons.KEYS) == 11 == len(set(icons.PLOTLY.values())) == len(set(icons.MPL.values()))
+    assert len(icons.KEYS) == 15 and len(icons.FUNNY) == 8
     assert len(icons.PALETTE) == 11
     for k in icons.KEYS:
         assert icons.svg(k, "#000").startswith("<img")
+        path = icons.mpl_path(k)
+        assert len(path.vertices) > 3 and path.get_extents().width > 60     # drawn and roughly fills the box
+    assert icons.path_d("no-such-symbol") == icons.path_d("circle")           # old rooms never crash
