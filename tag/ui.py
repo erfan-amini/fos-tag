@@ -39,6 +39,11 @@ BASE_CSS = """
   --signal:#C00000; --amber:#F2B705; --calm:#1E7B6B;
 }
 header[data-testid="stHeader"] {background:transparent; height:2.2rem;}
+/* On Streamlit Cloud the header grows to ~64px (Share, star, GitHub) and silently swallows clicks on anything
+   under it: our Home button and the Music switch. Let clicks pass through it, except on its own buttons. */
+header[data-testid="stHeader"], header[data-testid="stHeader"] * {pointer-events:none;}
+header[data-testid="stHeader"] button, header[data-testid="stHeader"] a, header[data-testid="stHeader"] [role="button"],
+header[data-testid="stHeader"] [role="menu"], header[data-testid="stHeader"] [role="menu"] * {pointer-events:auto;}
 .block-container {padding-top:.8rem !important; padding-bottom:1.2rem !important; max-width:1360px;}
 [data-testid="stMain"] [data-testid="stVerticalBlock"] {gap:.65rem;}
 [data-testid="stAudio"] {display:none;}
