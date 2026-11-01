@@ -121,5 +121,5 @@ def balloon_workbook(room: dict) -> bytes:
             ["R² of that line", None if f["n"] < 2 else round(f["r2"], 4)],
             ["Inflation time (s)", t]]
     _sheet(wb, "Summary", ["Quantity", "Value"], rows, [48, 14])
-    _plot_sheet(wb, plots.balloon_png(pts, f"Room {room['code']} · {room.get('title') or ''}".strip(" ·")))
+    _plot_sheet(wb, plots.balloon_png(pts, f"Room {room['code']} · {room.get('title') or ''}".strip(" ·"), t=t))
     return _finish(wb)

@@ -26,10 +26,10 @@ CSS = """
 .cd .im::after {content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(8,26,46,0) 50%%, rgba(8,26,46,.45) 100%%);}
 .cd .tag {position:absolute; left:.8rem; top:.8rem; z-index:1; background:rgba(255,255,255,.92); color:var(--navy); font-size:.72rem;
           font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:.22rem .55rem; border-radius:999px;}
-.cd .bd {padding:.9rem 1rem 1rem; display:flex; flex-direction:column; gap:.35rem; flex:1;}
+.cd .bd {padding:.9rem 1rem 1rem; display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex:1;}
 .cd h3 {font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:1.5rem; margin:0; color:var(--navy); line-height:1.05;}
 .cd p {margin:0; color:var(--muted); font-size:.93rem; line-height:1.4; flex:1;}
-.cd .go {margin-top:.5rem; color:var(--blue); font-weight:600; font-size:.92rem;}
+.cd .go {color:var(--blue); font-weight:600; font-size:.92rem; white-space:nowrap;}
 .cd .go::after {content:" \\2192";}
 .foot {margin-top:1.2rem; color:var(--muted); font-size:.85rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem;}
 @media (max-width:1000px){ .cards {grid-template-columns:repeat(2, minmax(0, 1fr));} }
@@ -59,12 +59,10 @@ def render():
         ui.music("lobby.mp3")
     st.html(f'<div class="hero"><img class="band" src="{ui.img_uri("fos_banner_wide.jpg")}" alt="">'
             f'<div class="in"><img src="{ui.img_uri("crown.png")}" alt="">'
-            f'<div><h1><small>Frontiers of Science · Columbia University</small>Tools and Games</h1>'
-            f'<p>Everything the seminar runs on one screen: a timer for the room, live class data that pairs send in from '
-            f'their phones, and the diplomacy simulation.</p></div></div></div>')
+            f'<div><h1><small>Frontiers of Science · Columbia University</small>Tools and Games</h1></div></div></div>')
     cards = "".join(
         f'<a class="cd" href="{href}" target="_top"><div class="im" style="background-image:url({ui.img_uri(img)})"><span class="tag">{tag}</span></div>'
-        f'<div class="bd"><h3>{name}</h3><p>{blurb}</p><span class="go">Open</span></div></a>'
+        f'<div class="bd"><h3>{name}</h3><span class="go">Open</span></div></a>'
         for tag, name, blurb, href, img in CARDS)
     st.html(f'<div class="cards">{cards}</div>')
     st.html('<div class="foot"><span>Rooms and their data are kept for 24 hours, then cleared. Export to Excel any time.</span>'

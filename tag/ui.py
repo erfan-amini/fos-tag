@@ -80,14 +80,19 @@ h2.vt {font-family:"Barlow Condensed",sans-serif; font-size:1.35rem; font-weight
 [class*="st-key-grid"] [data-testid="stHorizontalBlock"] {flex-wrap:wrap; gap:.4rem;}
 [class*="st-key-grid"] [data-testid="stColumn"] {min-width:0 !important; flex:1 1 0 !important; width:auto !important;}
 
-/* symbol tiles */
-[class*="st-key-tile_"] {border:2px solid var(--line); border-radius:12px; padding:.35rem .2rem .2rem; text-align:center; background:#fff;}
+/* symbol tiles: the whole tile is the button (an invisible button is stretched over the symbol and its name) */
+[class*="st-key-tile_"] {position:relative; border:2px solid var(--line); border-radius:12px; padding:.4rem .2rem .35rem; text-align:center;
+                         background:#fff; cursor:pointer;}
 [class*="st-key-tile_"] [data-testid="stHtml"] {display:flex; justify-content:center;}
-[class*="st-key-tile_"] button {min-height:1.7rem; padding:.05rem .2rem; font-size:.74rem; width:100%; border:0; background:transparent; color:var(--muted);}
-[class*="st-key-tile_"] button p {font-size:.74rem; white-space:nowrap;}
-[class*="st-key-tile_"] button:hover {color:var(--ink); background:var(--panel);}
+[class*="st-key-tile_"] .tile-in {display:flex; flex-direction:column; align-items:center; gap:.2rem;}
+[class*="st-key-tile_"] .tile-name {font-size:.74rem; color:var(--muted); white-space:nowrap; line-height:1.1;}
+[class*="st-key-tile_"] [data-testid="stElementContainer"]:last-child {position:absolute; inset:0; margin:0; z-index:2;}
+[class*="st-key-tile_"] [data-testid="stButton"] {height:100%;}
+[class*="st-key-tile_"] button {width:100%; height:100%; min-height:0; margin:0; padding:0; border:0; background:transparent; opacity:0;}
+[class*="st-key-tile_"]:hover {border-color:var(--blue);}
 [class*="st-key-tile_"][class*="_on"] {border-color:var(--navy); background:#EEF4FB; box-shadow:0 0 0 3px rgba(31,90,166,.15);}
-[class*="st-key-tile_"][class*="_taken"] {opacity:.35;}
+[class*="st-key-tile_"][class*="_on"] .tile-name {color:var(--navy); font-weight:600;}
+[class*="st-key-tile_"][class*="_taken"] {opacity:.35; cursor:not-allowed;}
 [class*="st-key-sw_"] button {min-height:2.2rem; width:100%; border-radius:10px; border:3px solid transparent; padding:0;}
 [class*="st-key-sw_"][class*="_on"] button {border-color:var(--ink); box-shadow:0 0 0 2px #fff inset;}
 

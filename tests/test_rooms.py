@@ -105,7 +105,12 @@ def test_tpt_people_plot_and_export(tmp_path):
     rows = plots.tpt_people(room)
     assert len(rows) == 8 and abs(rows[1]["thumb"] - 4.75) < 1e-9
     fig = plots.tpt_figure(rows)
-    assert len(fig.data) == 8            # one trace per pair per panel
+    bars = [tr for tr in fig.data if tr.type == "bar"]
+    assert [tr.name for tr in bars] == ["Thumb (mm)", "Forearm (mm)"]
+    assert sum(bars[0].y) == 8 and sum(bars[1].y) == 8          # one count per student in each
+    assert len([tr for tr in fig.data if tr.type == "scatter"]) == 8   # one symbol trace per pair, thumb and forearm
+    fig2 = plots.tpt_figure(rows, show_stats=True)
+    assert len(fig2.layout.shapes) == 4                           # two bands, two mean lines
     png = plots.tpt_png(rows, "test")
     assert png[:8] == b"\x89PNG\r\n\x1a\n"
     wb = load_workbook(io.BytesIO(export.tpt_workbook(room)))

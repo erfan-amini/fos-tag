@@ -14,7 +14,7 @@ KIND = "tpt"
 TITLE = "Two-Point Threshold"
 BLURB = ("Each pair measures the smallest distance at which two points still feel like two, on the thumb and on the "
          "forearm, three trials each. They send the numbers from a phone. The board shows every reading, the class "
-         "means and the 95% intervals as they arrive.")
+         "means and the 95% intervals as they arrive, as a histogram with thumb and forearm on the same axis.")
 
 
 # ---------------------------------------------------------------------------- board
@@ -61,9 +61,13 @@ def _live_board(code: str):
         return
     rows = plots.tpt_people(room)
     rooms.pop_on_new(room, sfx)
-    st.plotly_chart(plots.tpt_figure(rows, big=True), width="stretch", config={"displayModeBar": False},
+    show = st.session_state.get("tpt_stats", False)
+    st.plotly_chart(plots.tpt_figure(rows, big=True, show_stats=show), width="stretch", config={"displayModeBar": False},
                     key=f"tpt_fig_{code}")
-    c1, c2 = st.columns([4, 1.1], vertical_alignment="center")
+    c0, c1, c2 = st.columns([1.4, 3.2, 1.1], vertical_alignment="center")
+    with c0:
+        st.toggle("Means and 95% intervals", value=show, key="tpt_stats",
+                  help="Draw each mean as a dashed line with its 95% interval (mean ± 2 SE) shaded")
     with c1:
         st.html(rooms.joined_html(room))
     with c2:
@@ -131,7 +135,7 @@ def _mini_board(code: str):
     room = get_store().get(code)
     if room:
         rows = plots.tpt_people(room)
-        st.html(f'<div class="small">Class board · {len(rows)} readings so far</div>')
+        st.html(f'<div class="small">Class board · {len(rows)} {"student" if len(rows) == 1 else "students"} so far</div>')
         st.plotly_chart(plots.tpt_figure(rows, big=False), width="stretch", config={"displayModeBar": False, "staticPlot": True},
                         key=f"mini_{code}")
 

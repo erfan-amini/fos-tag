@@ -35,8 +35,8 @@ def _stats_html(rows: list[dict], t: float) -> str:
     cards = [f'<div class="stat"><div class="t">Dots on the graph</div><div class="v">{len(rows)}</div>'
              f'<div class="s">from {pairs} {"pair" if pairs == 1 else "pairs"} · inflated {t:g} s</div></div>']
     if f["n"] >= 2:
-        cards.append(f'<div class="stat"><div class="t">Trend through the origin</div><div class="v">v ≈ {fmt(f["k"], 3)} × d</div>'
-                     f'<div class="s">mm/s per mm · R² = {fmt(f["r2"], 2)}</div></div>')
+        cards.append(f'<div class="stat"><div class="t">Best-fit line, through the origin</div><div class="v" style="font-size:1.35rem">slope = {fmt(f["k"], 3)} per second</div>'
+                     f'<div class="s">velocity = slope × distance · R² = {fmt(f["r2"], 2)}</div></div>')
         cards.append(f'<div class="stat"><div class="t">What it says</div><div class="v" style="font-size:1.15rem">'
                      f'Twice as far, twice as fast</div><div class="s">velocity is proportional to distance</div></div>')
     else:
@@ -63,11 +63,12 @@ def _live_board(code: str):
     rows = plots.balloon_points(room)
     rooms.pop_on_new(room, sfx)
     trend = st.session_state.get("trend", True)
-    st.plotly_chart(plots.balloon_figure(rows, trend=trend, big=True), width="stretch", config={"displayModeBar": False},
+    t = float(room["settings"].get("inflate_s", 10) or 10)
+    st.plotly_chart(plots.balloon_figure(rows, trend=trend, big=True, t=t), width="stretch", config={"displayModeBar": False},
                     key=f"bal_fig_{code}")
     c1, c2, c3 = st.columns([1.1, 3.2, 1.1], vertical_alignment="center")
     with c1:
-        st.toggle("Trend line", value=trend, key="trend", help="Least-squares line through the origin, v = k × d")
+        st.toggle("Best-fit line", value=trend, key="trend", help="Least-squares line through the origin: velocity = slope × distance")
     with c2:
         st.html(rooms.joined_html(room))
     with c3:
@@ -120,8 +121,9 @@ def _mini_board(code: str):
     room = get_store().get(code)
     if room:
         rows = plots.balloon_points(room)
+        t = float(room["settings"].get("inflate_s", 10) or 10)
         st.html(f'<div class="small">Class graph · {len(rows)} dots so far</div>')
-        st.plotly_chart(plots.balloon_figure(rows, trend=True, big=False), width="stretch",
+        st.plotly_chart(plots.balloon_figure(rows, trend=True, big=False, t=t), width="stretch",
                         config={"displayModeBar": False, "staticPlot": True}, key=f"mini_{code}")
 
 

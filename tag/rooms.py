@@ -82,7 +82,7 @@ def board_code_html(path: str, code: str) -> tuple[str, str]:
     short = url.replace("https://", "").replace("http://", "")
     html = (f'<div class="board-code"><div><div class="code">{code}</div><div class="how">'
             f'<b>Scan the code</b> or open <span class="url">{short}</span><br>'
-            f'Type your names, pick a symbol, enter your numbers.</div></div></div>')
+            f'Type your names, pick a colour and a symbol, enter your numbers.</div></div></div>')
     return html, url
 
 
@@ -137,7 +137,9 @@ def _tile_grid(keys: list[str], chosen: str | None, taken: dict, color: str, row
             for col, k in zip(cols, row):
                 state = "taken" if k in taken else ("on" if k == chosen else "off")
                 with col, st.container(key=f"tile_{k}_{state}"):
-                    st.html(icons.svg(k, color if state != "taken" else "#B8C0CC", 44))
+                    st.html(f'<div class="tile-in">{icons.svg(k, color if state != "taken" else "#B8C0CC", 44)}'
+                            f'<div class="tile-name">{icons.LABEL[k]}</div></div>')
+                    # the button is invisible and covers the whole tile, so a tap on the symbol works too
                     if st.button(icons.LABEL[k], key=f"pick_{k}", disabled=(state == "taken"), width="stretch",
                                  help=f"Taken by {taken[k]}" if k in taken else None):
                         st.session_state["sym"] = k
@@ -164,7 +166,7 @@ def join_form(room: dict, path: str) -> dict | None:
     store = get_store()
     st.html(f'<div class="card"><h2 class="vt">Join room {room["code"]}'
             f'{(" · " + room["title"]) if room.get("title") else ""}</h2>'
-            f'<p class="lede">Type your names, pick a symbol and a colour. That is how your dots show on the board.</p></div>')
+            f'<p class="lede">Type your names, pick a colour, then a symbol. That is how you show on the board.</p></div>')
     n1 = st.text_input("Your name", key="n1", placeholder="First name")
     n2 = st.text_input("Partner's name", key="n2", placeholder="First name (leave empty if you work alone)")
     names = [n1, n2]
@@ -176,10 +178,10 @@ def join_form(room: dict, path: str) -> dict | None:
         st.session_state["col"] = existing["color"]
     chosen = st.session_state.get("sym")
     color = st.session_state.get("col", icons.PALETTE[5][1])
-    st.html('<div class="p-head">Your symbol</div>')
-    _tile_grid(icons.KEYS, chosen, taken, color, 4)
-    st.html('<div class="p-head">Your colour</div>')
+    st.html('<div class="p-head">1 · Your colour</div>')
     _swatches(color)
+    st.html('<div class="p-head">2 · Your symbol</div>')
+    _tile_grid(icons.KEYS, chosen, taken, color, 4)
     if chosen:
         st.html(f'<div class="mean-line">You will appear as {icons.badge(chosen, color, " & ".join(n for n in names if n.strip()) or "…")}</div>')
     if existing:
