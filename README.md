@@ -1,80 +1,39 @@
-# Nuclear Diplomacy Simulation
+# FoS TaG: Frontiers of Science tools and games
 
-A moderator console for the K=1 Project's Nuclear Diplomacy Simulation, built for a
-Frontiers of Science seminar at Columbia. Five groups play China, India, Pakistan,
-Russia and the United States. The instructor projects this page, enters the decision
-slips, and the app runs the attack stage, updates every GPR and handles sanctions.
+One Streamlit app for the seminar room, at **fos-tag.streamlit.app**. A Home button at
+the top of every page; no side menus.
 
-## Running a game
-
-The standings (GPR and weapons for every country, the world total and the attack odds)
-stay on the left the whole time. The main area follows the round:
-
-1. **Decisions.** Collect all five slips. Click each country's move. Lock them in.
-2. **Attack.** The page shows the world total and two strips. The first is split into
-   "attack" and "no attack" by this round's odds. The second is split among the three most
-   powerful countries in proportion to their chances (1 in 2, 1 in 3, 1 in 6). Click
-   *Run the attack draw*: a needle lands on each strip at the random number the app drew. You can also
-   call or skip the attack yourself (the teacher guide allows this). A hit plays a
-   short full-screen explosion with the country's name.
-3. **Sanctions.** The three most powerful countries decide whether to sanction one or
-   both of the two weakest. Tick the boxes, or click *No sanctions*.
-
-Repeat for five rounds (the default; change it in Settings), then end the game.
-
-- **End game** and **New game** sit at the bottom of the left panel, under the
-  standings. Each asks you to confirm.
-- **Settings** holds the rest: rounds planned, undo, the public
-  rules, and three switches (the secret-rule breakdown, the suspense before the
-  result, and the explosion).
-- **The address bar holds the game.** A refresh, or the same link opened later,
-  brings it back exactly.
-- **History** has the round-by-round tables and charts, and a CSV download.
-- **Debrief** shows where each country's points came from, the secret rules and how
-  often each fired, and a replay that re-draws the attacks 5,000 times to show how
-  much of the result was luck.
-
-## Rules implemented
-
-From the K=1 Project teacher guide, the general student instructions and the five
-country sheets.
-
-| | |
+| Page | What it does |
 |---|---|
-| Start | U.S. 10 weapons, GPR 1. China 3, GPR 2. Russia 5, GPR 3. India 1, GPR 5. Pakistan 1, GPR 6. |
-| Moves | U.S. up to 3 up or down, Russia 2, the others 1. Nobody goes below 0. |
-| GPR | Lower is more powerful. +1 per secret rule tripped, +4 for an attack, +2 for ignoring a sanction. Never goes down. |
-| Attack odds | World total 0: none. 1-5: 1 in 32. 6-11: 1 in 16. 12-18: 1 in 8. 19-27: 1 in 4. 28+: 1 in 2. |
-| Victim | One of the three lowest GPRs at the start of the round: 1 in 2, 1 in 3, 1 in 6. Tied countries share their slots equally (the same as re-rolling the die). |
-| Sanctions | After the GPR update, the three lowest GPRs may sanction one or both of the two highest. A sanctioned country must cut by the most it can next round, or take +2. |
-| House rule | **A country with 0 weapons cannot be sanctioned.** It can still be hit by an attack. |
-| Ties at the sanction line | Broken at random. The page says so when it happens. |
+| **Timer** | Full-screen countdown for the projector. Presets, +1/−1 minute, reminders at 10, 5 and 1 minute, a chime at the end, optional background music, light and dark screens, keyboard shortcuts (press `?`). The title and note are typed straight onto the screen and remembered in the browser. |
+| **Two-Point Threshold** | Start a room; the board shows a 4-letter code and a QR. Pairs scan it, type their names, pick one of 11 symbols and a colour, and enter three thumb and three forearm readings for each participant. The board shows the class dot plots, the means, the 95% intervals (mean ± 2 SE) and whether they overlap, live. Export to Excel any time: raw readings, per-person means, summary numbers and the plot. |
+| **Ballooniverse** | Same joining flow. Pairs enter the initial and final distance of three dots and the wavy line; the instructor sets the inflation time when starting the room (default 10 s). Every dot lands on the class graph of velocity against final distance, with a trend line through the origin and its slope. Export to Excel. |
+| **Nuclear Diplomacy** | The K=1 Project simulation, moderated from the projector: decision slips, the attack draw with a drumroll and a needle, sanctions, history, debrief. Background music, drumroll and explosion are switches in Settings. |
 
-The engine (`game.py`) reproduces the sample game in the teacher guide number for
-number; see `tests/test_game.py`.
+## How the live rooms work
 
-## What the rules do (notes for the debrief)
+- Rooms and their data live in the app's memory and in `data/rooms.json`, and are
+  cleared 24 hours after their last change. A pair that closes its page gets its entry
+  back by scanning again and typing the same names.
+- Each symbol can be taken once per room, so every pair is distinguishable on the board.
+- The board refreshes every two seconds. Open it in full screen (F11) on the projector.
+- Sections 22 and 24 get separate rooms; the room name shows on the board and in the
+  export file.
 
-- **Holding still is free.** If nobody moves, no secret rule fires at the start. Every
-  GPR change then comes from attacks.
-- **Building is pushed onto others.** No country pays a rule point for its own build at
-  the start; its rivals do. One Chinese build costs India, Russia and the U.S. a point
-  each. A U.S. or Russian build costs the other and China.
-- **The only defence against a rival's build is to build too.** The "X built and you
-  did not" rules punish anyone who stays put. That is the arms race in one line.
-- **India and Pakistan cannot disarm alone.** If India cuts alone, India and Russia
-  pay a point. If Pakistan cuts alone, Pakistan and China pay. If they cut together,
-  nobody pays.
-- **Disarmament by the big two is cheap.** A U.S. cut of 3 costs nobody anything and
-  halves the attack odds (20 to 17 weapons: 1 in 4 to 1 in 8). A Russian cut of 2 costs
-  India a point, since Pakistan plus China then outnumber Russia.
-- **Attacks only fall on the top three.** India and Pakistan carry no attack risk at
-  the start, so the odds give them no reason to disarm. Only sanctions do, and with
-  the house rule a country at 0 weapons is out of reach of sanctions too.
-- **The starting order matters.** GPR never goes down, so the U.S. starts with a lead.
-  In 20,000 simulated four-round games where everyone holds and obeys sanctions, the
-  U.S. finishes first about two times in three. India and Pakistan almost never do,
-  so "winning" is best judged against each country's own goals.
+## Sounds
+
+Everything in `static/sounds/` is synthesized by `tools/make_sounds.py`, so nothing is
+copyrighted. To use your own track, drop an MP3 with the same name in that folder:
+`lobby.mp3` (hub, boards, timer), `tension.mp3` (diplomacy game), `drumroll.mp3`,
+`explosion.mp3`, `pop.mp3` (a pair joins).
+
+## Keeping the app awake
+
+Streamlit Community Cloud puts an app to sleep after a stretch without visitors, and a
+plain web request does not wake it. `.github/workflows/keepalive.yml` opens the app in a
+real browser every six hours (`tools/keepalive.py`) and presses the wake-up button if
+needed. GitHub switches off scheduled workflows after 60 days without a commit, so the
+same job writes a timestamp commit once the last commit is 40 days old.
 
 ## Run it yourself
 
@@ -84,7 +43,12 @@ streamlit run streamlit_app.py
 python -m pytest -q
 ```
 
+The join link and QR use the address the browser sees, so they work locally and on the
+cloud without configuration.
+
 ## Credits
 
-Game design, rules and country briefs: the K=1 Project, Columbia University
-(k1project.columbia.edu). Flags from Wikimedia Commons (public domain).
+Nuclear Diplomacy: game design, rules and country briefs by the K=1 Project, Columbia
+University (k1project.columbia.edu). Flags from Wikimedia Commons (public domain).
+Castle Bravo photograph: U.S. Department of Energy (public domain). Campus and reading
+room photographs: Columbia University.

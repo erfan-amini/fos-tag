@@ -3,7 +3,7 @@ from fractions import Fraction
 
 import pytest
 
-from game import (COUNTRIES, Game, RuleError, attack_probability, hit_shares, replay_luck,
+from tag.game import (COUNTRIES, Game, RuleError, attack_probability, hit_shares, replay_luck,
                   START_GPR)
 
 
