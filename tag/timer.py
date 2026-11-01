@@ -26,7 +26,9 @@ iframe[title="st.iframe"], [data-testid="stIFrame"] iframe {height:100vh !import
 
 
 @st.cache_data(show_spinner=False)
-def page_html() -> str:
+def page_html(stamp: float) -> str:
+    """The timer page with the music inlined. `stamp` is the file's modification time, so a redeploy that keeps the
+    process alive (Streamlit Cloud does this) still picks up a new timer.html."""
     html = HTML.read_text(encoding="utf-8")
     music = ui.SOUNDS / "lobby.mp3"
     uri = "data:audio/mpeg;base64," + base64.b64encode(music.read_bytes()).decode()
@@ -40,4 +42,4 @@ def page_html() -> str:
 def render():
     ui.base()
     st.html(CSS)
-    components.html(page_html(), height=1000, scrolling=False)
+    components.html(page_html(HTML.stat().st_mtime), height=1000, scrolling=False)
