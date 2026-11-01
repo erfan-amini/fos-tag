@@ -138,20 +138,26 @@ TOP_NAV_JS = """
 (function () {
   if (window.__fosNav) { return; }
   window.__fosNav = true;
-  function goTop(href) {
-    try { window.top.location.href = href; } catch (err) { window.location.href = href; }
+  // Move to another page of this app through Streamlit's own router (works inside the
+  // Streamlit Community Cloud iframe, where the top window cannot be navigated).
+  function goPage(path) {
+    var q = path.indexOf('?');
+    var page = (q >= 0 ? path.slice(0, q) : path).replace(/^\/+/, '');
+    var search = q >= 0 ? path.slice(q) : '';
+    var base = window.location.pathname.replace(/[^/]*$/, '');
+    history.pushState({}, '', base + page + search);
+    window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
   }
   document.addEventListener('click', function (e) {
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
     if (!a) { return; }
     var href = a.getAttribute('href') || '';
     if (href.charAt(0) !== '/' || href.indexOf('//') === 0) { return; }
-    if (window.top === window) { return; }
     e.preventDefault();
-    goTop(a.href);
+    goPage(href);
   }, true);
   window.addEventListener('message', function (e) {
-    if (e.data === 'fos-home') { goTop(new URL('/', window.location.href).href); }
+    if (e.data === 'fos-home') { goPage('/'); }
   });
 })();
 </script>
