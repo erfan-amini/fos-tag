@@ -7,3 +7,4 @@ matplotlib
 openpyxl
 qrcode[pil]
 pillow
+# Pinned on 2026-11-01; a change here makes Streamlit Cloud rebuild and restart the app.
