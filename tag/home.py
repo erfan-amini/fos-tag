@@ -39,7 +39,7 @@ CSS = """
 
 CARDS = [
     ("Tool", "Timer", "Big digits for the projector. Presets, reminders at 10, 5 and 1 minute, and a chime when time is up.",
-     "/app/static/timer.html", "reading_room.jpg"),
+     "/timer", "reading_room.jpg"),
     ("Mind and Brain", "Two-Point Threshold", "Pairs send their thumb and forearm readings from their phones. "
      "The class dot plots, means and 95% intervals build up live.", "/two-point", "neuron.jpg"),
     ("Physics and Peace", "Ballooniverse", "Each pair adds its three dots to the class graph of velocity against distance. "
@@ -63,7 +63,7 @@ def render():
             f'<p>Everything the seminar runs on one screen: a timer for the room, live class data that pairs send in from '
             f'their phones, and the diplomacy simulation.</p></div></div></div>')
     cards = "".join(
-        f'<a class="cd" href="{href}"><div class="im" style="background-image:url({ui.img_uri(img)})"><span class="tag">{tag}</span></div>'
+        f'<a class="cd" href="{href}" target="_top"><div class="im" style="background-image:url({ui.img_uri(img)})"><span class="tag">{tag}</span></div>'
         f'<div class="bd"><h3>{name}</h3><p>{blurb}</p><span class="go">Open</span></div></a>'
         for tag, name, blurb, href, img in CARDS)
     st.html(f'<div class="cards">{cards}</div>')

@@ -5,7 +5,7 @@ the top of every page; no side menus.
 
 | Page | What it does |
 |---|---|
-| **Timer** | Full-screen countdown for the projector. Presets, +1/−1 minute, reminders at 10, 5 and 1 minute, a chime at the end, optional background music, light and dark screens, keyboard shortcuts (press `?`). The title and note are typed straight onto the screen and remembered in the browser. |
+| **Timer** (`/timer`) | Full-screen countdown for the projector. Presets, +1/−1 minute, reminders at 10, 5 and 1 minute, a chime at the end, optional background music, light and dark screens, keyboard shortcuts (press `?`). The title and note are typed straight onto the screen and remembered in the browser. |
 | **Two-Point Threshold** | Start a room; the board shows a 4-letter code and a QR. Pairs scan it, type their names, pick one of 11 symbols and a colour, and enter three thumb and three forearm readings for each participant. The board shows the class dot plots, the means, the 95% intervals (mean ± 2 SE) and whether they overlap, live. Export to Excel any time: raw readings, per-person means, summary numbers and the plot. |
 | **Ballooniverse** | Same joining flow. Pairs enter the initial and final distance of three dots and the wavy line; the instructor sets the inflation time when starting the room (default 10 s). Every dot lands on the class graph of velocity against final distance, with a trend line through the origin and its slope. Export to Excel. |
 | **Nuclear Diplomacy** | The K=1 Project simulation, moderated from the projector: decision slips, the attack draw with a drumroll and a needle, sanctions, history, debrief. Background music, drumroll and explosion are switches in Settings. |
@@ -19,6 +19,12 @@ the top of every page; no side menus.
 - The board refreshes every two seconds. Open it in full screen (F11) on the projector.
 - Sections 22 and 24 get separate rooms; the room name shows on the board and in the
   export file.
+
+## On Streamlit Community Cloud
+
+The cloud shows the app inside an iframe. Internal links are sent to the top window by a
+small script, and the timer page (`static/timer.html`) is embedded by `tag/timer.py`
+with its music inlined, since the cloud does not serve static files directly.
 
 ## Sounds
 

@@ -8,13 +8,14 @@ from pathlib import Path
 
 import streamlit as st
 
-from tag import balloon, diplomacy, home, tpt
+from tag import balloon, diplomacy, home, timer, tpt
 
 st.set_page_config(page_title="FoS TaG", page_icon=str(Path(__file__).parent / "assets" / "img" / "crown.png"),
                    layout="wide", initial_sidebar_state="expanded")
 
 pages = [
     st.Page(home.render, title="FoS TaG", url_path="", default=True),
+    st.Page(timer.render, title="Timer", url_path="timer"),
     st.Page(tpt.render, title="Two-Point Threshold", url_path="two-point"),
     st.Page(balloon.render, title="Ballooniverse", url_path="ballooniverse"),
     st.Page(diplomacy.render, title="Nuclear Diplomacy", url_path="diplomacy"),

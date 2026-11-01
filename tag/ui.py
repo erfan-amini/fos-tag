@@ -131,12 +131,40 @@ HOME_SVG = ('<img src="data:image/svg+xml;base64,' + base64.b64encode(_HOME.enco
             + '" width="17" height="17" alt="" style="display:inline-block">')
 
 
+# Streamlit Community Cloud shows the app inside an iframe, and st.html drops target attributes,
+# so internal links are sent to the top window by hand. The timer's own Home link asks for it by message.
+TOP_NAV_JS = """
+<script>
+(function () {
+  if (window.__fosNav) { return; }
+  window.__fosNav = true;
+  function goTop(href) {
+    try { window.top.location.href = href; } catch (err) { window.location.href = href; }
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a) { return; }
+    var href = a.getAttribute('href') || '';
+    if (href.charAt(0) !== '/' || href.indexOf('//') === 0) { return; }
+    if (window.top === window) { return; }
+    e.preventDefault();
+    goTop(a.href);
+  }, true);
+  window.addEventListener('message', function (e) {
+    if (e.data === 'fos-home') { goTop(new URL('/', window.location.href).href); }
+  });
+})();
+</script>
+"""
+
+
 def base():
     st.html(BASE_CSS)
+    st.html(TOP_NAV_JS, unsafe_allow_javascript=True)
 
 
 def topbar_html(title: str = "", subtitle: str = "", home: bool = True) -> str:
-    home_html = f'<a class="home" href="/">{HOME_SVG}Home</a>' if home else ""
+    home_html = f'<a class="home" href="/" target="_top">{HOME_SVG}Home</a>' if home else ""
     ttl = f'<div class="ttl">{title}<small>{subtitle}</small></div>' if title else ""
     return (f'{home_html}<img class="crown" src="{img_uri("crown.png")}" alt="">'
             f'<div class="wm"><b>FoS TaG</b><span>Frontiers of Science · Tools and Games</span></div>{ttl}')
