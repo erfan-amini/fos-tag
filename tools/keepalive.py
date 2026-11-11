@@ -6,15 +6,15 @@ JavaScript and opens the websocket. This script opens the page, presses the
 "get this app back up" button if the app had already dozed off, and waits until
 the hub has rendered.
 
-usage: python tools/keepalive.py https://fos-tag.streamlit.app/
+usage: python tools/keepalive.py https://fos-ict.streamlit.app/
 """
 import sys
 import time
 
 from playwright.sync_api import sync_playwright
 
-url = sys.argv[1] if len(sys.argv) > 1 else "https://fos-tag.streamlit.app/"
-MARK = "Tools and Games"            # text that only the rendered hub shows
+url = sys.argv[1] if len(sys.argv) > 1 else "https://fos-ict.streamlit.app/"
+MARK = "In-Class Tools"            # text that only the rendered hub shows
 
 with sync_playwright() as p:
     browser = p.chromium.launch()

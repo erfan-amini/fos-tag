@@ -1,6 +1,6 @@
-# FoS TaG: Frontiers of Science tools and games
+# FoS ICT: Frontiers of Science in-class tools
 
-One Streamlit app for the seminar room, at **fos-tag.streamlit.app**. A Home button at
+One Streamlit app for the seminar room, at **fos-ict.streamlit.app**. A Home button at
 the top of every page; no side menus.
 
 | Page | What it does |

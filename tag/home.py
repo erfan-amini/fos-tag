@@ -59,7 +59,7 @@ def render():
         ui.music("lobby.mp3")
     st.html(f'<div class="hero"><img class="band" src="{ui.img_uri("fos_banner_wide.jpg")}" alt="">'
             f'<div class="in"><img src="{ui.img_uri("crown.png")}" alt="">'
-            f'<div><h1><small>Frontiers of Science · Columbia University</small>Tools and Games</h1></div></div></div>')
+            f'<div><h1><small>Frontiers of Science · Columbia University</small>In-Class Tools</h1></div></div></div>')
     cards = "".join(
         f'<a class="cd" href="{href}" target="_top"><div class="im" style="background-image:url({ui.img_uri(img)})"><span class="tag">{tag}</span></div>'
         f'<div class="bd"><h3>{name}</h3><span class="go">Open</span></div></a>'

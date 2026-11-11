@@ -1,4 +1,4 @@
-"""FoS TaG: Frontiers of Science tools and games.
+"""FoS ICT: Frontiers of Science in-class tools.
 
 One app, four things: a timer for the room, two live class-data activities that pairs
 feed from their phones (Two-Point Threshold, Ballooniverse), and the Nuclear Diplomacy
@@ -10,11 +10,11 @@ import streamlit as st
 
 from tag import balloon, diplomacy, home, timer, tpt
 
-st.set_page_config(page_title="FoS TaG", page_icon=str(Path(__file__).parent / "assets" / "img" / "crown.png"),
+st.set_page_config(page_title="FoS ICT", page_icon=str(Path(__file__).parent / "assets" / "img" / "crown.png"),
                    layout="wide", initial_sidebar_state="expanded")
 
 pages = [
-    st.Page(home.render, title="FoS TaG", url_path="", default=True),
+    st.Page(home.render, title="FoS ICT", url_path="", default=True),
     st.Page(timer.render, title="Timer", url_path="timer"),
     st.Page(tpt.render, title="Two-Point Threshold", url_path="two-point"),
     st.Page(balloon.render, title="Ballooniverse", url_path="ballooniverse"),
