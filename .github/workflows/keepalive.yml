@@ -2,7 +2,7 @@ name: Keep the app awake
 
 on:
   schedule:
-    - cron: "23 */6 * * *"      # every six hours
+    - cron: "23 */3 * * *"      # every three hours
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
 jobs:
   visit:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,7 +22,13 @@ jobs:
           pip install playwright
           playwright install --with-deps chromium
       - name: Open the app
-        run: python tools/keepalive.py https://fos-ict.streamlit.app/
+        # up to three tries, a minute apart, so one slow start does not count as a miss
+        run: |
+          for i in 1 2 3; do
+            python tools/keepalive.py https://fos-ict.streamlit.app/ && exit 0
+            sleep 60
+          done
+          exit 1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
