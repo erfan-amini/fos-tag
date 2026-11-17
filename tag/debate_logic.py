@@ -36,26 +36,23 @@ DEFAULT_TIMES = {"prep": 300, "open": 120, "rebut": 60, "close": 60, "vote": 30}
 ML2 = {
     "label": "Molecules and Life 2: cancer, money and ethics",
     "resolutions": [
-        {"title": "You are the funding panel",
-         "scene": "One grant. Two good projects. Only one gets the money.",
-         "text": "The grant should go to cancer prevention and early screening, not to a new drug that adds "
-                 "about six months of life.",
+        {"title": "You set the cancer budget", "scene": "",
+         "text": "Governments should stop paying for cancer drugs that add less than a year of life, and fund "
+                 "prevention and screening instead.",
          "for": 1, "against": 2,
-         "hint_for": "The cervical cancer numbers: what a vaccine and screening did there. How many people "
-                     "prevention can reach, and what it costs per person.",
-         "hint_against": "The patient who is sick today and cannot wait. The first drug in a new family often leads "
-                         "to better ones: KRAS took forty years, and now the door is open.",
-         "img_for": "debate_screening.jpg", "img_against": "debate_drug.jpg",
-         "cap_for": "Prevention and screening", "cap_against": "The new drug"},
-        {"title": "Is it fair to randomize?",
-         "scene": "The trial is still running. The early results look very good.",
+         "hint_for": "Cervical cancer: what a vaccine and screening did. How many people prevention reaches, and the "
+                     "cost per person.",
+         "hint_against": "The patient who is sick today cannot wait. First drugs lead to better ones: KRAS took forty "
+                         "years, and now the door is open.",
+         "img_for": "debate_prevention.jpg", "img_against": "debate_drug.jpg",
+         "cap_for": "Prevention and screening", "cap_against": "New drugs"},
+        {"title": "Is it fair to randomize?", "scene": "",
          "text": "Once early results suggest a new drug works, it is unethical to randomize terminally ill "
                  "patients to standard treatment.",
          "for": 3, "against": 4,
-         "hint_for": "These patients do not have much time. They joined the trial hoping for the new drug, half of "
-                     "them did not get it, and they did not get to choose.",
-         "hint_against": "Early results can be wrong. Without a comparison group, we may never know whether the drug "
-                         "really works. Remember the first of the four questions: was it a fair trial?",
+         "hint_for": "These patients have little time. They joined hoping for the new drug, and half did not get it.",
+         "hint_against": "Early results can be wrong. Without a comparison group we may never know if the drug works. "
+                         "First question: was it a fair trial?",
          "img_for": "debate_patient.jpg", "img_against": "debate_trial.jpg",
          "cap_for": "The patient cannot wait", "cap_against": "The fair comparison"},
     ],
@@ -169,7 +166,7 @@ def apply_settings(room: dict, new: dict):
     s["times"] = {**DEFAULT_TIMES, **{k: int(v) for k, v in (new.get("times") or {}).items() if k in DEFAULT_TIMES}}
     for old, res in zip(s["resolutions"], new.get("resolutions") or []):
         for k in ("title", "scene", "text", "hint_for", "hint_against"):
-            old[k] = str(res.get(k, old[k])).strip()
+            old[k] = str(res.get(k, old.get(k, ""))).strip()
         f, a = int(res.get("for", old["for"])), int(res.get("against", old["against"]))
         if f != a and 1 <= f <= s["teams"] and 1 <= a <= s["teams"]:
             old["for"], old["against"] = f, a

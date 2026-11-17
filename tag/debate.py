@@ -88,10 +88,10 @@ CSS = """
                   letter-spacing:.1em; text-transform:uppercase; padding:.25rem .7rem; border-radius:999px;}
 .dbt-side .big {font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:5.2rem; line-height:.9;}
 .dbt-side .big small {font-size:1.3rem; font-weight:500; opacity:.85; margin-left:.4rem;}
-.dbt-fl {position:absolute; bottom:38%; font-size:2.9rem; line-height:1; pointer-events:none; opacity:0;
+.dbt-fl {position:absolute; bottom:56%; font-size:2.9rem; line-height:1; pointer-events:none; opacity:0;
          animation:dbt-rise 3.6s ease-out forwards; filter:drop-shadow(0 3px 6px rgba(0,0,0,.45)); z-index:3;}
 @keyframes dbt-rise {0% {transform:translateY(40px) scale(.5); opacity:0;} 10% {opacity:1; transform:translateY(0) scale(1.2);}
-                     75% {opacity:1;} 100% {transform:translateY(-190px) scale(1); opacity:0;}}
+                     75% {opacity:1;} 100% {transform:translateY(-130px) scale(1); opacity:0;}}
 
 /* centre column */
 .dbt-now {text-align:center; margin-top:.2rem;}
@@ -363,8 +363,7 @@ def _board_lobby(room: dict, sfx_track: list):
         st.html(_how_html(room))
         a, b = st.columns([2, 1], vertical_alignment="center")
         with a:
-            st.html(f'<div class="small">{len(room["people"])} joined. When everyone sits with their team, '
-                    f'show the first resolution.</div>')
+            st.html(f'<div class="small">{len(room["people"])} joined</div>')
         with b:
             if st.button("Show Resolution 1", type="primary", icon=":material/gavel:", width="stretch", key="dbt_go"):
                 _do(code, lambda r: L.start_resolution(r, 0))
@@ -532,8 +531,8 @@ def _board_run(room: dict, sfx_track: list):
         if d["seg"] == L.SEG_RESULT:
             st.html(_win_html(room, tally))
         else:
-            hint = {"prep": "Teams prepare. The panel picks a starting side.",
-                    "vote": "Panel: which team convinced you?"}.get(seg["key"], "Panel: react, and change sides if you are moved.")
+            hint = {"prep": "Teams prepare. Panel: pick a side.",
+                    "vote": "Panel: who convinced you?"}.get(seg["key"], "Panel: react, or change sides.")
             side_cls = seg["side"] or ""
             who = L.team_name(res[seg["side"]]) if seg["side"] else ("The panel votes" if seg["key"] == "vote" else "Everyone")
             st.html(f'<div class="dbt-now"><div class="a">{seg["label"]}</div><div class="b {side_cls}">{who}</div></div>'
@@ -699,7 +698,7 @@ def _react_buttons(room: dict, pid: str, team: str):
                             st.rerun(scope="fragment")
                     st.html(f'<div class="dbt-cap">{label}</div>')
     sent = st.session_state.get("dbt_sent")
-    st.html(f'<div class="dbt-sent">{sent[0] if sent and time.time() - sent[1] < 4 else "Tap as often as you like."}</div>')
+    st.html(f'<div class="dbt-sent">{sent[0] if sent and time.time() - sent[1] < 4 else ""}</div>')
 
 
 def _now_line(room: dict, now: float) -> str:
@@ -745,7 +744,7 @@ def _phone_run(room: dict, me: dict):
     if my_role in L.SIDES:
         word = "FOR" if my_role == "for" else "AGAINST"
         st.html(f'<div class="dbt-role {my_role}"><div class="a">{L.team_name(me["team"])} argues</div><div class="b">{word}</div>'
-                f'<div class="c">Argue the side you are given, with evidence.</div></div>')
+                f'<div class="c">Use evidence.</div></div>')
         if seg["key"] == "prep":
             msg, you = "Prepare your case with your team.", False
         elif seg["key"] == "vote":
@@ -764,21 +763,20 @@ def _phone_run(room: dict, me: dict):
     if seg["key"] == "prep":
         st.html('<div class="p-head">Before the debate: where do you stand?</div>')
         _stance_buttons(room, pid, [("for", "For"), ("und", "Not sure"), ("against", "Against")])
-        st.html('<div class="small">Nobody sees your choice. The board shows only the totals, once the opening starts.</div>')
+        st.html('<div class="small">Your choice is anonymous.</div>')
     elif seg["key"] == "vote":
         st.html('<div class="p-head">Final vote: which team convinced you?</div>')
         _stance_buttons(room, pid, [("for", f'{L.team_name(res["for"])} · For'),
                                     ("against", f'{L.team_name(res["against"])} · Against')], final=True)
         v = d["votes"].get(str(d["r"]), {}).get(pid) or {}
-        st.html('<div class="saved">Your vote is in. You can change it until the votes are counted.</div>' if v.get("final")
-                else '<div class="small">Vote for the team that argued better, not for the side you like.</div>')
+        st.html('<div class="saved">Your vote is in.</div>' if v.get("final")
+                else '<div class="small">Vote for the better argument, not for the side you like.</div>')
     else:
         team = L.team_name(res[seg["side"]])
         st.html(f'<div class="p-head">React to {team}</div>')
         _react_buttons(room, pid, team)
-        st.html('<div class="p-head">Your side right now</div>')
+        st.html('<div class="p-head">Your side · change it any time</div>')
         _stance_buttons(room, pid, [("for", "For"), ("und", "Not sure"), ("against", "Against")])
-        st.html('<div class="small">Moved by an argument? Change sides any time.</div>')
 
 
 @st.fragment(run_every=2)
@@ -878,7 +876,6 @@ def _resolution_fields(res: dict, i: int, teams: int, key: str, expanded: bool =
     tnames = list(range(1, teams + 1))
     with st.expander(f"Resolution {i + 1}" + (f" · {res['title']}" if res["title"] else ""), expanded=expanded or not res["text"]):
         res["title"] = st.text_input("Short title", res["title"], key=f"dbt_title_{key}", placeholder="You are the funding panel")
-        res["scene"] = st.text_input("The setting, one line", res["scene"], key=f"dbt_scene_{key}")
         res["text"] = st.text_area("The resolution", res["text"], key=f"dbt_text_{key}", height=90,
                                    placeholder="A statement one team argues for and one team argues against.")
         a, b = st.columns(2)
@@ -911,7 +908,7 @@ def _setup() -> tuple[dict, list[str]]:
     with c[1]:
         n_res = int(st.number_input("Resolutions", 1, 4, 2, key=f"dbt_nres_{preset}"))
     s = L.default_settings(preset, teams, n_res)
-    st.html('<div class="small">Every text and every time below can be changed, now or later from the Room menu on the board.</div>')
+    st.html('<div class="small">Everything below can be edited now, or later from the Room menu on the board.</div>')
     with st.expander("Speaking times"):
         _time_fields(s["times"], "new")
     problems = []
@@ -935,8 +932,7 @@ def _edit_dialog(code: str):
         return
     s = copy.deepcopy(room["settings"])
     teams = int(s["teams"])
-    st.caption("Phones and the board pick up the new text within two seconds. A clock that is already on the screen "
-               "keeps its time; the new times apply from the next step, or press the reset button under the clock.")
+    st.caption("New times apply from the next step. A clock that has already started keeps its time.")
     st.html('<div class="p-head">Times</div>')
     _time_fields(s["times"], f"ed_{code}")
     problems = []
@@ -959,9 +955,8 @@ def landing():
     st.html(f'<style>.dbt-hero.pic {{background-image:url({_img("debate_athens.jpg")});}}</style>')
     left, right = st.columns([1.3, 1], gap="large")
     with left:
-        st.html('<div class="card"><h2 class="vt">Start a debate</h2><p class="lede">Two teams argue each resolution, for and '
-                'against. Everybody else is the panel: they pick a side before the opening, react to each speech from '
-                'their phones, change sides when an argument moves them, and vote at the end. The board keeps the clock.</p></div>')
+        st.html('<div class="card"><h2 class="vt">Start a debate</h2><p class="lede">Two teams argue each resolution. '
+                'Everybody else is the panel: they pick a side, react, change sides and vote from their phones.</p></div>')
         name = st.text_input("Room name", placeholder="Section 22", key="dbt_room_name")
         settings, problems = _setup()
         for p in problems:
@@ -972,7 +967,7 @@ def landing():
             rooms.go(room=room["code"], board=1)
     with right:
         st.html('<div class="dbt-hero pic small"><div class="in"><div class="k">Frontiers of Science</div><h1>Debate</h1>'
-                '<p>Argue the side you are given.</p></div></div>')
+                '</div></div>')
         rs = store.rooms_of(KIND)
         st.html('<div class="card"><h2 class="vt">Open a room from the last 24 hours</h2>'
                 + ('<p class="small">No rooms yet.</p>' if not rs else '') + '</div>')
@@ -985,7 +980,7 @@ def landing():
             with b:
                 if st.button("Open board", key=f"dbt_open_{room['code']}", width="stretch"):
                     rooms.go(room=room["code"], board=1)
-        st.html('<div class="dbt-credit">Pictures: Raphael, The School of Athens (1509 to 1511), public domain. Screening, '
+        st.html('<div class="dbt-credit">Pictures: Raphael, The School of Athens (1509 to 1511), public domain. Vaccine, '
                 'laboratory and clinic photographs: National Cancer Institute, public domain. Gavel: Smithsonian American '
                 'Art Museum, CC0. All through Wikimedia Commons.</div>')
 

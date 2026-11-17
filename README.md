@@ -63,7 +63,7 @@ room photographs: Columbia University.
 ## Pictures in the Debate tool
 
 - Raphael, *The School of Athens* (1509 to 1511). Public domain, through Wikimedia Commons.
-- National Cancer Institute, public domain, through Wikimedia Commons: "Mammography patient"
-  (Bill Branson), "Researcher uses pipettes" and "Patient receives chemotherapy" (Rhoda Baer),
+- National Cancer Institute, public domain, through Wikimedia Commons: "Nurse administers a vaccine",
+  "Researcher uses pipettes" and "Patient receives chemotherapy" (Rhoda Baer),
   "Monoclonal antibodies (1)" (Linda Bartlett).
 - Gavel, Smithsonian American Art Museum, object 1906.9.25. CC0, through Wikimedia Commons.
