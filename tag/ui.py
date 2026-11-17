@@ -189,7 +189,7 @@ def topbar_html(title: str = "", subtitle: str = "", home: bool = True) -> str:
     home_html = f'<a class="home" href="/" target="_top">{HOME_SVG}Home</a>' if home else ""
     ttl = f'<div class="ttl">{title}<small>{subtitle}</small></div>' if title else ""
     return (f'{home_html}<img class="crown" src="{img_uri("crown.png")}" alt="">'
-            f'<div class="wm"><b>FoS ICT</b><span>Frontiers of Science · In-Class Tools</span></div>{ttl}')
+            f'<div class="wm"><b>FroSci Seminar Kit</b><span>Frontiers of Science · Columbia University</span></div>{ttl}')
 
 
 def topbar(title: str = "", subtitle: str = "", home: bool = True):

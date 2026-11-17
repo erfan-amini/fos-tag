@@ -25,7 +25,7 @@ jobs:
         # up to three tries, a minute apart, so one slow start does not count as a miss
         run: |
           for i in 1 2 3; do
-            python tools/keepalive.py https://fos-ict.streamlit.app/ && exit 0
+            python tools/keepalive.py https://frosci-seminar-kit.streamlit.app/ && exit 0
             sleep 60
           done
           exit 1

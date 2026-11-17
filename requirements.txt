@@ -7,4 +7,4 @@ matplotlib
 openpyxl
 qrcode[pil]
 pillow
-# Pinned on 2026-11-17 (Debate: panel votes For or Against, before and after). Edit this line to force a rebuild.
+# Pinned on 2026-11-17 (renamed to FroSci Seminar Kit). Edit this line to force a rebuild.
