@@ -389,10 +389,9 @@ def _side_html(room: dict, side: str, tally: dict, now: float) -> str:
         badge = '<div class="badge">Convinced the panel</div>'
     floats = ""
     if seg["side"] == side:
-        for ts, emo, fside, fid in L.recent_feed(room, now):
-            if fside == side:
-                floats += (f'<span class="dbt-fl" style="left:{6 + (fid * 37) % 78}%; animation-delay:-{now - ts:.2f}s">'
-                           f'{L.EMOJI_CHAR[emo]}</span>')
+        for emo, fid, age in _fresh_reactions(room, side, now):
+            floats += (f'<span class="dbt-fl" style="left:{6 + (fid * 37) % 78}%; animation-delay:-{age:.2f}s">'
+                       f'{L.EMOJI_CHAR[emo]}</span>')
     names = " · ".join(p["name"] for p in L.members(room, team))
     word = "For" if side == "for" else "Against"
     if result:
@@ -405,6 +404,28 @@ def _side_html(room: dict, side: str, tally: dict, now: float) -> str:
                 + (f'<div class="cap">{res.get("cap_" + side)}</div>' if res.get("cap_" + side) else ""))
     return (f'<div class="{" ".join(cls)}">{badge}{floats}<div class="in">{body}'
             f'<div class="mem">{names}</div>{_rx_html(tally["reacts"].get(side, {}))}</div></div>')
+
+
+def _fresh_reactions(room: dict, side: str, now: float, life: float = 3.6) -> list[tuple[str, int, float]]:
+    """Reactions to float on this screen: (emoji, id, seconds since this screen first showed it).
+    The age counts from when the board first saw the reaction, not from the tap, so a slow connection
+    still gets the whole animation. Reactions from before this page opened are not replayed."""
+    key = f'dbt_seen_{room["code"]}'
+    feed = room["debate"]["feed"]
+    if key not in st.session_state:
+        st.session_state[key] = {"from": room["debate"]["fid"], "t": {}}
+    seen = st.session_state[key]
+    out = []
+    for _ts, emo, fside, fid in feed:
+        if fid <= seen["from"]:
+            continue
+        first = seen["t"].setdefault(fid, now)
+        if now - first < life and fside == side:
+            out.append((emo, fid, now - first))
+    for fid in [f for f, t in seen["t"].items() if now - t > 30]:
+        del seen["t"][fid]
+        seen["from"] = max(seen["from"], fid)
+    return out
 
 
 def _pan_html(room: dict, tally: dict) -> str:
