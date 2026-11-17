@@ -11,7 +11,7 @@ permissions:
 jobs:
   visit:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -21,14 +21,18 @@ jobs:
         run: |
           pip install playwright
           playwright install --with-deps chromium
-      - name: Open the app
-        # up to three tries, a minute apart, so one slow start does not count as a miss
+      - name: Open both addresses
+        # the same app is deployed twice (streamlit_app.py and seminar_kit_app.py);
+        # up to three tries each, a minute apart, so one slow start does not count as a miss
         run: |
-          for i in 1 2 3; do
-            python tools/keepalive.py https://fos-ict.streamlit.app/ && exit 0
-            sleep 60
+          ok=0
+          for url in https://fos-ict.streamlit.app/ https://frosci-seminar-kit.streamlit.app/; do
+            for i in 1 2 3; do
+              if python tools/keepalive.py "$url"; then ok=$((ok + 1)); break; fi
+              sleep 60
+            done
           done
-          exit 1
+          [ "$ok" -eq 2 ]
       - uses: actions/upload-artifact@v4
         if: always()
         with:
