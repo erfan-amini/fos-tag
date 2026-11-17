@@ -7,4 +7,4 @@ matplotlib
 openpyxl
 qrcode[pil]
 pillow
-# Pinned on 2026-11-17 (title FroSci Seminar Kit, address fos-ict). Edit this line to force a rebuild.
+# Pinned on 2026-11-17 (full-screen button, no grey box after Esc). Edit this line to force a rebuild.
