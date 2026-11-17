@@ -2,8 +2,8 @@
 
 The board (projector) shows the resolution, the two sides, the clock and where the panel
 stands. Each student joins from a phone, picks a team, and then either sees which side the
-team argues, or, as a panel member, picks a side before the opening, reacts to each speech
-with an emoji and changes sides while listening. Where the panel stands at the end decides it.
+team argues, or, as a panel member, votes For or Against before the opening, reacts to each
+speech with an emoji, and votes again after the closing speeches. The result compares the two votes.
 """
 from __future__ import annotations
 
@@ -88,6 +88,8 @@ CSS = """
                   letter-spacing:.1em; text-transform:uppercase; padding:.25rem .7rem; border-radius:999px;}
 .dbt-side .big {font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:5.2rem; line-height:.9;}
 .dbt-side .big small {font-size:1.3rem; font-weight:500; opacity:.85; margin-left:.4rem;}
+.dbt-side .big.ba {font-size:4.4rem; white-space:nowrap;} .dbt-side .big.ba i {font-style:normal; opacity:.7; margin:0 .2em;}
+.dbt-side .ba-sub {font-size:1.15rem; font-weight:500; opacity:.9; margin:.2rem 0 .1rem;}
 .dbt-fl {position:absolute; bottom:56%; font-size:2.9rem; line-height:1; pointer-events:none; opacity:0;
          animation:dbt-rise 3.6s ease-out forwards; filter:drop-shadow(0 3px 6px rgba(0,0,0,.45)); z-index:3;}
 @keyframes dbt-rise {0% {transform:translateY(40px) scale(.5); opacity:0;} 10% {opacity:1; transform:translateY(0) scale(1.2);}
@@ -285,8 +287,8 @@ def _rx_html(counts: dict) -> str:
 def _bar_html(c: dict, thin: bool = False, labels: bool = True) -> str:
     total = sum(c.values())
     if total == 0:
-        return f'<div class="dbt-bar {"thin" if thin else ""}"><div class="lock">Nobody on the panel</div></div>'
-    names = {"for": "For", "und": "Not sure", "against": "Against"}
+        return f'<div class="dbt-bar {"thin" if thin else ""}"><div class="lock">No votes</div></div>'
+    names = L.STANCE_LABEL
     parts = []
     for s in L.STANCES:
         if c[s]:
@@ -335,7 +337,7 @@ def _how_html(room: dict) -> str:
     t = {**L.DEFAULT_TIMES, **room["settings"].get("times", {})}
     steps = [("Prepare", _dur_words(t["prep"])), ("Opening, each side", _dur_words(t["open"])),
              ("Rebuttal, each side", _dur_words(t["rebut"])), ("Closing, each side", _dur_words(t["close"])),
-             ("Panel's sides counted", "At the end")]
+             ("Final vote", _dur_words(t["vote"]))]
     return '<div class="dbt-how">' + "".join(f"<div><b>{v}</b>{k}</div>" for k, v in steps) + "</div>"
 
 
@@ -395,10 +397,10 @@ def _side_html(room: dict, side: str, tally: dict, now: float) -> str:
     names = " · ".join(p["name"] for p in L.members(room, team))
     word = "For" if side == "for" else "Against"
     if result:
-        sw = tally["swing"][side]
+        b, a, w = tally["before"][side], tally["after"][side], tally["won"][side]
         body = (f'<div class="tag">{word} · {L.team_name(team)}</div>'
-                f'<div class="big">{tally["after"][side]}<small>on this side'
-                f' · {"+" if sw > 0 else ""}{sw} since the start</small></div>')
+                f'<div class="big ba">{b}<i>→</i>{a}</div>'
+                f'<div class="ba-sub">votes before → after' + (f' · won over {w}' if w else "") + '</div>')
     else:
         body = (f'<div class="tag">Argues {word.lower()}</div><div class="tm">{L.team_name(team)}</div>'
                 + (f'<div class="cap">{res.get("cap_" + side)}</div>' if res.get("cap_" + side) else ""))
@@ -432,37 +434,54 @@ def _pan_html(room: dict, tally: dict) -> str:
     d = room["debate"]
     who = _panel_names(room)
     n = tally["n"]
-    if L.seg_index(room) == 0:
-        bar = (f'<div class="dbt-bar"><div class="lock">🔒 {tally["picked"]} of {n} have picked a side. '
-               f'The sides are counted at the end.</div></div>')
-        right = "On your phone: where do you stand before the debate?"
+    i = L.seg_index(room)
+    if i == 0:
+        bar = (f'<div class="dbt-bar"><div class="lock">🔒 {tally["picked"]} of {n} have voted. '
+               f'Shown at the end, next to the final vote.</div></div>')
+        right = "On your phone: For or Against, before the debate"
     elif L.at_result(room):
         bar = (f'<div class="dbt-rows"><span>Before</span>{_bar_html(tally["before"], thin=True)}'
                f'<span>After</span>{_bar_html(tally["after"])}</div>')
-        right = f'{tally["moved"]} of {n} changed their mind'
+        right = f'{tally["moved"]} of {n} changed sides'
+    elif i == L.SEG_VOTE:
+        bar = (f'<div class="dbt-bar"><div class="lock">🔒 {tally["voted"]} of {n} have voted again. '
+               f'Shown when the votes are counted.</div></div>')
+        right = "On your phone: For or Against, after the debate"
     else:
-        c = tally["changes"]
-        bar = ('<div class="dbt-bar"><div class="lock">🔒 Hidden until the end. The panel can change sides '
-               'any time; where they stand after the last speech decides it.</div></div>')
-        right = f'{n} on the panel · {c} change{"s" if c != 1 else ""} of side so far'
+        bar = ('<div class="dbt-bar"><div class="lock">🔒 Votes are locked during the speeches. '
+               'The panel votes again after the closing.</div></div>')
+        right = f'{tally["picked"]} of {n} voted before the debate'
     return (f'<div class="dbt-pan"><div class="h"><b>The panel · {who}</b><span>{right}</span></div>{bar}</div>')
 
 
 def _win_html(room: dict, tally: dict) -> str:
     res = L.resolution(room)
-    a = tally["after"]
     if tally["n"] == 0:
         w, s = "No panel", "Nobody was on the panel for this resolution."
-    elif tally["winner"] is None:
-        w, s = "A tie", f'{a["for"]} to {a["against"]} at the end, and neither side gained more since the start.'
+    elif not (tally["picked"] or tally["voted"]):
+        w, s = "No votes", "The panel did not vote on this resolution."
     else:
-        team = L.team_name(res[tally["winner"]])
-        w = f"{team} convinced the panel"
-        hi, lo = max(a["for"], a["against"]), min(a["for"], a["against"])
-        s = (f"{hi} to {lo} at the end" + (f' · {a["und"]} still not sure' if a["und"] else "")) \
-            if tally["how"] == "count" else f"{hi} to {lo}: level at the end, won on minds changed"
-    return (f'<div class="dbt-win pic"><div class="k">The panel has decided</div><div class="w">{w}</div>'
+        w = f'{L.team_name(res[tally["winner"]])} convinced the panel' if tally["winner"] else "A tie"
+        s = _why_words(tally)
+    return (f'<div class="dbt-win pic"><div class="k">The panel has voted</div><div class="w">{w}</div>'
             f'<div class="s">{s}</div></div>')
+
+
+def _why_words(t: dict) -> str:
+    """One line on how the result came about: who switched sides, or the count at the end."""
+    b, a, won = t["before"], t["after"], t["won"]
+    line = f'For {b["for"]} → {a["for"]} · Against {b["against"]} → {a["against"]}'
+    if t["how"] == "swing":
+        w = t["winner"]
+        other = "against" if w == "for" else "for"
+        n = won[w]
+        why = f'{n} switched to {L.STANCE_LABEL[w]}' + (f', {won[other]} the other way' if won[other] else "")
+    elif t["how"] == "count":
+        why = ("Nobody switched sides, so the count decides" if not t["moved"]
+               else "As many switched each way, so the count decides")
+    else:
+        why = "Level before and after"
+    return f"{line}<br>{why}"
 
 
 def _controls(room: dict, now: float):
@@ -477,7 +496,7 @@ def _controls(room: dict, now: float):
         if seg_i == L.SEG_RESULT:
             c = st.columns([0.7, 4.3])
             with c[0]:
-                if st.button("", icon=":material/skip_previous:", key="dbt_back", width="stretch", help="Back to the last speech (opens the sides again)"):
+                if st.button("", icon=":material/skip_previous:", key="dbt_back", width="stretch", help="Back to the final vote"):
                     _do(code, lambda r: L.go_seg(r, seg_i - 1))
             with c[1]:
                 if st.button("Finish and debrief" if last else f"Show Resolution {d['r'] + 2}", type="primary",
@@ -499,7 +518,7 @@ def _controls(room: dict, now: float):
                     _do(code, lambda r: L.timer_pause(r["debate"]["timer"]))
             else:
                 nxt = segs[seg_i + 1]
-                label = "Count the sides" if nxt["key"] == "result" else f"Next: {_seg_title(room, nxt, short=True)}"
+                label = "Count the votes" if nxt["key"] == "result" else f"Next: {_seg_title(room, nxt, short=True)}"
                 if st.button(label, type="primary", key="dbt_main", width="stretch", icon=":material/arrow_forward:"):
                     _do(code, lambda r: L.go_seg(r, seg_i + 1))
         with c[2]:
@@ -531,18 +550,18 @@ def _board_run(room: dict, sfx_track: list):
             st.html(_win_html(room, tally))
         else:
             if seg["key"] == "prep":
-                hint = "Teams prepare. Panel: pick a side."
-            elif L.seg_index(room) == L.SEG_LAST_SPEECH:
-                hint = "Last speech. Panel: your side now is your vote."
+                hint = "Teams prepare. Panel: vote For or Against."
+            elif seg["key"] == "vote":
+                hint = "Panel: vote again, For or Against."
             else:
-                hint = "Panel: react, or change sides."
+                hint = "Panel: react. Votes are locked until the end."
             side_cls = seg["side"] or ""
-            who = L.team_name(res[seg["side"]]) if seg["side"] else "Everyone"
+            who = L.team_name(res[seg["side"]]) if seg["side"] else ("The panel votes" if seg["key"] == "vote" else "Everyone")
             st.html(f'<div class="dbt-now"><div class="a">{seg["label"]}</div><div class="b {side_cls}">{who}</div></div>'
                     f'{clock_html(room, "big", now)}<div class="dbt-now"><div class="c">{hint}</div></div>')
         _controls(room, now)
     st.html(_pan_html(room, tally))
-    # sounds: a bell when the clock runs out, a gavel and balloons when the sides are counted
+    # sounds: a bell when the clock runs out, a gavel and balloons when the votes are counted
     t = d["timer"]
     key = f'{room["code"]}:{t["v"]}'
     if L.timer_state(t, now) == "over" and st.session_state.get("dbt_bell") != key:
@@ -566,9 +585,9 @@ def _summary_card(room: dict, r: int) -> str:
     if t["winner"]:
         head = f'{L.team_name(res[t["winner"]])} convinced the panel'
     else:
-        head = "A tie" if (t["after"]["for"] or t["after"]["against"]) else "No sides picked"
+        head = "A tie" if (t["after"]["for"] or t["after"]["against"]) else "No votes"
     return (f'<div class="dbt-pan"><div class="h"><b>Resolution {r + 1} · {head}</b>'
-            f'<span>{t["moved"]} of {t["n"]} changed their mind</span></div>'
+            f'<span>{t["moved"]} of {t["n"]} changed sides</span></div>'
             f'<div class="small" style="margin-bottom:.5rem">{res["text"]}</div>'
             f'<div class="dbt-rows"><span>Before</span>{_bar_html(t["before"], thin=True)}'
             f'<span>After</span>{_bar_html(t["after"])}</div>'
@@ -630,7 +649,7 @@ def _board_tools(room: dict):
             st.rerun()
         if st.button("Edit texts and times", key="dbt_edit", icon=":material/edit:"):
             _edit_dialog(code)
-        if room["debate"]["stage"] == "run" and st.button("Clear this resolution's sides and reactions", key="dbt_clear",
+        if room["debate"]["stage"] == "run" and st.button("Clear this resolution's votes and reactions", key="dbt_clear",
                                                          icon=":material/restart_alt:"):
             store.update(code, lambda r: (L.reset_resolution(r, r["debate"]["r"]), L.go_seg(r, 0)))
             st.rerun()
@@ -662,9 +681,13 @@ def board(room: dict):
 
 
 # ---------------------------------------------------------------------------- phone
+def _my_vote(room: dict, pid: str) -> dict:
+    return room["debate"]["votes"].get(str(room["debate"]["r"]), {}).get(pid) or {}
+
+
 def _stance_buttons(room: dict, pid: str, options: list[tuple[str, str]]):
     code = room["code"]
-    cur = (room["debate"]["votes"].get(str(room["debate"]["r"]), {}).get(pid) or {}).get("now")
+    cur = _my_vote(room, pid).get(L.vote_field(room) or "")
     with st.container(key=f"grid_stance_{len(options)}"):
         cols = st.columns(len(options))
         for col, (s, label) in zip(cols, options):
@@ -707,7 +730,7 @@ def _react_buttons(room: dict, pid: str, team: str):
 def _now_line(room: dict, now: float) -> str:
     seg = L.current_seg(room)
     res = L.resolution(room)
-    who = L.team_name(res[seg["side"]]) if seg["side"] else "Everyone prepares"
+    who = L.team_name(res[seg["side"]]) if seg["side"] else {"vote": "The panel votes"}.get(seg["key"], "Everyone prepares")
     return (f'<div class="dbt-line"><div class="l"><small>{seg["label"]}</small><b class="{seg["side"] or ""}">{who}</b></div>'
             f'{clock_html(room, "mid", now)}</div>')
 
@@ -715,21 +738,22 @@ def _now_line(room: dict, now: float) -> str:
 def _phone_result(room: dict, me: dict, my_role: str) -> str:
     t = L.tally(room)
     res = L.resolution(room)
-    a = t["after"]
     if t["winner"]:
         head = f'{L.team_name(res[t["winner"]])} convinced the panel'
     else:
-        head = "A tie" if t["n"] else "No panel"
+        head = "A tie" if (t["picked"] or t["voted"]) else ("No votes" if t["n"] else "No panel")
     extra = ""
     if my_role == "panel":
-        v = room["debate"]["votes"].get(str(room["debate"]["r"]), {}).get(me["id"]) or {}
-        pre, cur = L.STANCE_LABEL[v.get("pre") or "und"], L.STANCE_LABEL[v.get("now") or "und"]
-        extra = f'<div class="c">You started at "{pre}" and ended at "{cur}".</div>'
+        v = _my_vote(room, me["id"])
+        pre, post = L.STANCE_LABEL.get(v.get("pre")), L.STANCE_LABEL.get(v.get("post"))
+        if pre and post:
+            extra = f'You voted {pre} before and {post} after.'
+        elif pre or post:
+            extra = f'You voted {pre or post} {"before" if pre else "after"} the debate.'
     elif t["winner"]:
-        extra = f'<div class="c">{"Your team won the panel." if t["winner"] == my_role else "The other team won the panel this time."}</div>'
-    return (f'<div class="dbt-role panel"><div class="a">The panel has decided</div><div class="b">{head}</div>'
-            f'<div class="c">For {a["for"]} · Against {a["against"]}' + (f' · Not sure {a["und"]}' if a["und"] else "")
-            + f'</div>{extra}</div>')
+        extra = "Your team won the panel." if t["winner"] == my_role else "The other team won the panel this time."
+    return (f'<div class="dbt-role panel"><div class="a">The panel has voted</div><div class="b">{head}</div>'
+            f'<div class="c">{_why_words(t)}</div>' + (f'<div class="c">{extra}</div>' if extra else "") + '</div>')
 
 
 def _phone_run(room: dict, me: dict):
@@ -750,6 +774,8 @@ def _phone_run(room: dict, me: dict):
                 f'<div class="c">Use evidence.</div></div>')
         if seg["key"] == "prep":
             msg, you = "Prepare your case with your team.", False
+        elif seg["key"] == "vote":
+            msg, you = "The panel is voting. Well done.", False
         elif seg["side"] == my_role:
             msg, you = f'Your team is speaking: {seg["label"].lower()}.', True
         else:
@@ -760,19 +786,26 @@ def _phone_run(room: dict, me: dict):
             with st.expander("Stuck? Some ideas for your side"):
                 st.write(hint)
         return
-    # the panel
+    # the panel: a vote before, reactions during, a vote after
+    sides = [("for", "For"), ("against", "Against")]
+    v = _my_vote(room, pid)
     if seg["key"] == "prep":
-        st.html('<div class="p-head">Before the debate: where do you stand?</div>')
-        _stance_buttons(room, pid, [("for", "For"), ("und", "Not sure"), ("against", "Against")])
-        st.html('<div class="small">Your choice is anonymous.</div>')
+        st.html('<div class="p-head">Before the debate: For or Against?</div>')
+        _stance_buttons(room, pid, sides)
+        st.html('<div class="saved">Your vote is in. It locks when the opening starts.</div>' if v.get("pre")
+                else '<div class="small">Your vote is anonymous. You vote again at the end.</div>')
+    elif seg["key"] == "vote":
+        st.html('<div class="p-head">After the debate: For or Against?</div>')
+        _stance_buttons(room, pid, sides)
+        st.html('<div class="saved">Your vote is in.</div>' if v.get("post")
+                else '<div class="small">Vote for the better argument, not for the side you liked.</div>')
     else:
         team = L.team_name(res[seg["side"]])
         st.html(f'<div class="p-head">React to {team}</div>')
         _react_buttons(room, pid, team)
-        last = L.seg_index(room) == L.SEG_LAST_SPEECH
-        st.html(f'<div class="p-head">{"Last speech · your side now is your vote" if last else "Your side · change it any time"}</div>')
-        _stance_buttons(room, pid, [("for", "For"), ("und", "Not sure"), ("against", "Against")])
-        st.html('<div class="small">Judge the arguments, not the side you like. Where you stand at the end counts.</div>')
+        first = L.STANCE_LABEL.get(v.get("pre"))
+        st.html(f'<div class="dbt-turn">🔒 {"You voted " + first + " before the debate." if first else "You did not vote before the debate."}'
+                f'<br><span class="small">You vote again after the closing speeches.</span></div>')
 
 
 @st.fragment(run_every=2)
@@ -859,8 +892,8 @@ def phone(room: dict):
 # ---------------------------------------------------------------------------- settings: at the start, and later
 def _time_fields(times: dict, key: str):
     spec = [("prep", "Prepare (min)", 60), ("open", "Opening (min)", 60), ("rebut", "Rebuttal (min)", 60),
-            ("close", "Closing (min)", 60)]
-    for col, (k, label, unit) in zip(st.columns(4), spec):
+            ("close", "Closing (min)", 60), ("vote", "Final vote (s)", 1)]
+    for col, (k, label, unit) in zip(st.columns(5), spec):
         with col:
             v = st.number_input(label, 0.5 if unit == 60 else 10.0, 30.0 if unit == 60 else 180.0,
                                 float(times.get(k, L.DEFAULT_TIMES[k]) / unit), step=0.5 if unit == 60 else 5.0,
@@ -918,7 +951,7 @@ def _setup() -> tuple[dict, list[str]]:
 
 @st.dialog("Edit the debate", width="large")
 def _edit_dialog(code: str):
-    """Change texts and times while the room is open. The panel's sides and reactions are kept."""
+    """Change texts and times while the room is open. Votes and reactions are kept."""
     import copy
 
     store = get_store()
@@ -952,8 +985,8 @@ def landing():
     left, right = st.columns([1.3, 1], gap="large")
     with left:
         st.html('<div class="card"><h2 class="vt">Start a debate</h2><p class="lede">Two teams argue each resolution. '
-                'Everybody else is the panel: they pick a side, react and change sides from their phones. '
-                'Where they stand at the end decides it.</p></div>')
+                'Everybody else is the panel: they vote For or Against before the debate, react during it, '
+                'and vote again at the end.</p></div>')
         name = st.text_input("Room name", placeholder="Section 22", key="dbt_room_name")
         settings, problems = _setup()
         for p in problems:

@@ -1,4 +1,4 @@
-"""The debate rules: roles, the clock, the panel's sides, reactions and the count."""
+"""The debate rules: roles, the clock, the panel's two votes, reactions and the count."""
 import sys
 from pathlib import Path
 
@@ -25,8 +25,8 @@ def test_preset_follows_the_slides():
     r1, r2 = s["resolutions"]
     assert (r1["for"], r1["against"], r2["for"], r2["against"]) == (1, 2, 3, 4)
     segs = L.segments(s)
-    assert [x["dur"] for x in segs] == [300, 120, 120, 60, 60, 60, 60, 0]
-    assert [x["key"] for x in segs][-2:] == ["close", "result"]      # no separate vote
+    assert [x["dur"] for x in segs] == [300, 120, 120, 60, 60, 60, 60, 30, 0]
+    assert [x["key"] for x in segs][-3:] == ["close", "vote", "result"]
     assert [x["side"] for x in segs[1:7]] == ["for", "against"] * 3
     blank = L.default_settings("blank", teams=3, n_res=3)
     assert all(r["for"] != r["against"] for r in blank["resolutions"])
@@ -63,57 +63,73 @@ def test_clock():
     assert len({L.new_timer(5)["v"], t["v"]}) == 2      # every change gives the clock a new key
 
 
-def test_panel_picks_and_changes_sides_until_the_count(tmp_path):
-    _, room = make_room(tmp_path)
+def test_panel_votes_before_and_after_and_is_locked_in_between(tmp_path):
+    _, room = make_room(tmp_path)                         # panel on resolution 1: Eli, Fay (T3), Gus, Hana, Ivy (T4)
     L.start_resolution(room, 0)
     assert not L.set_stance(room, "ana", "for")          # a debater cannot vote
-    assert L.set_stance(room, "eli", "for") and L.set_stance(room, "fay", "against") and L.set_stance(room, "gus", "against")
+    assert not L.set_stance(room, "eli", "und")          # there is no "Not sure"
+    for pid, side in [("eli", "for"), ("fay", "against"), ("gus", "against"), ("hana", "for"), ("hana", "against")]:
+        assert L.set_stance(room, pid, side)              # a second tap in the same step replaces the first
     t = L.tally(room)
-    assert (t["n"], t["picked"], t["snap"]) == (5, 3, False)
-    L.go_seg(room, 1)                                     # the opening starts: the starting split is frozen
-    t = L.tally(room)
-    assert t["before"] == {"for": 1, "und": 2, "against": 2} and t["moved"] == 0
-    L.set_stance(room, "hana", "for")                     # was not sure
-    L.set_stance(room, "fay", "for")                      # changed sides
-    L.set_stance(room, "fay", "for")                      # tapping the same side again is not a move
-    assert room["debate"]["votes"]["0"]["fay"]["moves"] == 1
-    L.go_seg(room, L.SEG_LAST_SPEECH)
-    assert L.set_stance(room, "ivy", "against")           # still open during the last speech
-    L.go_seg(room, L.SEG_RESULT)                          # the host counts: the sides close
+    assert (t["n"], t["picked"], t["voted"], t["before"]) == (5, 4, 0, {"for": 1, "against": 3})
+    for seg in range(1, L.SEG_VOTE):                      # every speech: locked
+        L.go_seg(room, seg)
+        assert not L.set_stance(room, "eli", "against") and not L.set_stance(room, "ivy", "for")
+    L.go_seg(room, L.SEG_VOTE)
+    assert L.timer_running(room["debate"]["timer"])       # the vote clock starts by itself
+    for pid, side in [("fay", "for"), ("gus", "for"), ("hana", "against"), ("ivy", "for")]:
+        assert L.set_stance(room, pid, side)              # Eli does not vote again: his first vote stands
+    L.go_seg(room, L.SEG_RESULT)                          # the host counts: closed
     assert not L.set_stance(room, "eli", "against")
     t = L.tally(room)
-    assert t["after"] == {"for": 3, "und": 0, "against": 2}
-    assert t["before"] == {"for": 1, "und": 2, "against": 2}
-    assert (t["winner"], t["how"], t["moved"], t["changes"]) == ("for", "count", 3, 3)
-    assert t["swing"] == {"for": 2, "against": 0}
-    L.go_seg(room, L.SEG_LAST_SPEECH)                     # back one step opens the sides again
+    assert t["before"] == {"for": 1, "against": 3}
+    assert t["after"] == {"for": 4, "against": 1}         # Ivy voted only at the end
+    assert t["won"] == {"for": 2, "against": 0} and t["moved"] == 2
+    assert (t["winner"], t["how"], t["voted"]) == ("for", "swing", 4)
+    assert t["swing"] == {"for": 3, "against": -2}
+    L.go_seg(room, L.SEG_VOTE)                            # back one step opens the final vote again
     assert L.set_stance(room, "eli", "against")
+    assert room["debate"]["votes"]["0"]["eli"] == {"pre": "for", "post": "against"}
 
 
-def test_a_room_saved_with_the_old_vote_step_still_opens(tmp_path):
+def test_the_side_that_wins_over_more_of_the_panel_wins(tmp_path):
     _, room = make_room(tmp_path)
     L.start_resolution(room, 0)
-    room["debate"]["seg"] = 8                             # the old result step
-    assert L.at_result(room) and L.current_seg(room)["key"] == "result"
-    assert not L.set_stance(room, "eli", "for")
-    L.go_seg(room, L.SEG_LAST_SPEECH)
-    assert room["debate"]["seg"] == 6 and L.set_stance(room, "eli", "for")
 
+    def run(pre, post):
+        L.reset_resolution(room, 0)
+        L.go_seg(room, 0)
+        for pid, side in pre.items():
+            L.set_stance(room, pid, side)
+        L.go_seg(room, L.SEG_VOTE)
+        for pid, side in post.items():
+            L.set_stance(room, pid, side)
+        L.go_seg(room, L.SEG_RESULT)
+        return L.tally(room)
 
-def test_tie_goes_to_the_side_that_moved_more(tmp_path):
-    _, room = make_room(tmp_path)
-    L.join(room, "Jo", 3)
-    L.start_resolution(room, 0)
-    for pid, s in [("eli", "for"), ("fay", "for"), ("gus", "for"), ("hana", "against")]:
-        L.set_stance(room, pid, s)
-    L.go_seg(room, 1)
-    for pid, s in [("ivy", "against"), ("jo", "against")]:
-        L.set_stance(room, pid, s)
-    t = L.tally(room)
-    assert t["after"]["for"] == t["after"]["against"] == 3
-    assert (t["winner"], t["how"]) == ("against", "swing")
+    every = ["eli", "fay", "gus", "hana", "ivy"]
+    # For still has more at the end, but Against won someone over: Against wins
+    t = run(dict.fromkeys(every[:4], "for") | {"ivy": "against"}, {"eli": "against"})
+    assert t["after"] == {"for": 3, "against": 2} and (t["winner"], t["how"]) == ("against", "swing")
+    # nobody switched: the count at the end decides
+    t = run({"eli": "for", "fay": "for", "gus": "against"}, {"eli": "for", "fay": "for", "gus": "against"})
+    assert (t["winner"], t["how"], t["moved"]) == ("for", "count", 0)
+    # one switch each way: the count decides
+    t = run({"eli": "for", "fay": "against", "gus": "for"}, {"eli": "against", "fay": "for"})
+    assert t["won"] == {"for": 1, "against": 1} and (t["winner"], t["how"]) == ("for", "count")
+    # level before and after
+    t = run({"eli": "for", "fay": "against"}, {})
+    assert (t["winner"], t["how"]) == (None, "tie")
     L.reset_resolution(room, 0)
-    assert L.tally(room)["winner"] is None
+    assert L.tally(room)["picked"] == 0
+
+
+def test_a_room_with_votes_in_an_older_format_still_counts(tmp_path):
+    _, room = make_room(tmp_path)
+    L.start_resolution(room, 0)
+    room["debate"]["votes"]["0"] = {"eli": {"pre": "und", "now": "for", "moves": 1}, "fay": {"pre": "for", "now": "for"}}
+    t = L.tally(room)
+    assert t["before"] == {"for": 1, "against": 0} and t["picked"] == 1
 
 
 def test_reactions_only_from_the_panel_during_a_speech(tmp_path):
@@ -162,7 +178,7 @@ def test_texts_and_times_can_change_while_the_room_is_open(tmp_path):
     assert room["settings"]["resolutions"][0]["text"] == "A new wording."
     assert (room["settings"]["resolutions"][1]["for"], room["settings"]["resolutions"][1]["against"]) == (3, 4)
     assert L.timer_left(room["debate"]["timer"]) == 180            # the idle clock took the new length
-    assert room["debate"]["votes"]["0"]["eli"]["now"] == "for"     # votes are kept
+    assert room["debate"]["votes"]["0"]["eli"]["pre"] == "for"     # votes are kept
     L.timer_start(room["debate"]["timer"], 0)
     new["times"]["prep"] = 60
     L.apply_settings(room, new)

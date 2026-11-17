@@ -1,9 +1,9 @@
 """Debate: the rules, with no Streamlit in sight so they can be tested.
 
 A room has teams. Each resolution names one team that argues for it and one that argues
-against it; everybody else is the panel. The panel picks a side before the opening, can
-react to each speech and change sides while it listens. There is no separate vote: where each
-panel member stands when the host counts is the result. Every function here changes the room dict
+against it; everybody else is the panel. The panel votes twice, For or Against: once before the
+opening and once after the closing speeches. In between the vote is locked and the panel can only
+react. The result compares each side before and after. Every function here changes the room dict
 in place and is meant to run inside Store.update().
 """
 from __future__ import annotations
@@ -12,8 +12,8 @@ import re
 import time
 
 SIDES = ("for", "against")
-STANCES = ("for", "und", "against")
-STANCE_LABEL = {"for": "For", "und": "Not sure", "against": "Against"}
+STANCES = SIDES                # no "Not sure": the panel takes a side, before and after
+STANCE_LABEL = {"for": "For", "against": "Against"}
 
 # key, emoji, what it means. Erfan's pick: two for a good argument, two for being moved, two for doubt.
 EMOJI = [
@@ -32,7 +32,7 @@ TEAM_COLORS = ["#1C7ED6", "#F08C00", "#0CA678", "#7048E8", "#E64980", "#8B5A2B"]
 FOR_COLOR = "#1E7B46"
 AGAINST_COLOR = "#B4282C"
 
-DEFAULT_TIMES = {"prep": 300, "open": 120, "rebut": 60, "close": 60}
+DEFAULT_TIMES = {"prep": 300, "open": 120, "rebut": 60, "close": 60, "vote": 30}
 
 ML2 = {
     "label": "Molecules and Life 2: cancer, money and ethics",
@@ -90,16 +90,17 @@ def segments(settings: dict) -> list[dict]:
         {"key": "rebut", "label": "Rebuttal", "side": "against", "dur": t["rebut"]},
         {"key": "close", "label": "Closing", "side": "for", "dur": t["close"]},
         {"key": "close", "label": "Closing", "side": "against", "dur": t["close"]},
+        {"key": "vote", "label": "Final vote", "side": None, "dur": t["vote"]},
         {"key": "result", "label": "Result", "side": None, "dur": 0},
     ]
 
 
-N_SEGS = 8
-SEG_LAST_SPEECH, SEG_RESULT = 6, 7
+N_SEGS = 9
+SEG_LAST_SPEECH, SEG_VOTE, SEG_RESULT = 6, 7, 8
 
 
 def seg_index(room: dict) -> int:
-    """The current step, kept in range (a room saved before the vote step was dropped can say 8)."""
+    """The current step, kept in range."""
     return max(0, min(N_SEGS - 1, int(room["debate"]["seg"])))
 
 
@@ -268,28 +269,13 @@ def start_resolution(room: dict, r: int):
     _reacts(room, r)
 
 
-def _snapshot(room: dict):
-    """Freeze where the panel stood before the first speech."""
-    d = room["debate"]
-    votes = _votes(room, d["r"])
-    for p in panel(room):
-        v = votes.setdefault(p["id"], {"pre": None, "now": None, "moves": 0})
-        v["pre"] = v["now"] or "und"
-        v["now"] = v["now"] or "und"
-        v["moves"] = 0
-    d["snap"] = {**d.get("snap", {}), str(d["r"]): True}
-
-
 def go_seg(room: dict, seg: int, now: float | None = None):
     d = room["debate"]
     seg = max(0, min(N_SEGS - 1, seg))
-    d["seg"] = seg_index(room)
-    if d["seg"] == 0 and seg > 0:
-        _snapshot(room)
-    if seg == 0:
-        d.get("snap", {}).pop(str(d["r"]), None)
     d["seg"] = seg
     d["timer"] = new_timer(segments(room["settings"])[seg]["dur"], d["timer"]["v"] + 1)
+    if seg == SEG_VOTE:
+        timer_start(d["timer"], now)          # the vote clock starts by itself
 
 
 def finish(room: dict):
@@ -304,30 +290,26 @@ def reset_resolution(room: dict, r: int):
     d = room["debate"]
     d["votes"][str(r)] = {}
     d["reacts"][str(r)] = {"for": {}, "against": {}}
-    d.get("snap", {}).pop(str(r), None)
-
-
-def snapshot_taken(room: dict, r: int | None = None) -> bool:
-    d = room["debate"]
-    return bool(d.get("snap", {}).get(str(d["r"] if r is None else r)))
 
 
 # ---------------------------------------------------------------------------- the panel acts
+def vote_field(room: dict) -> str | None:
+    """Which vote is open now: 'pre' while the teams prepare, 'post' in the final vote, else None (locked)."""
+    i = seg_index(room)
+    return "pre" if i == 0 else "post" if i == SEG_VOTE else None
+
+
 def set_stance(room: dict, pid: str, stance: str) -> bool:
-    """Pick or change a side. Open from the preparation to the last speech; closed once the host counts."""
+    """A panel member votes For or Against. Open while the teams prepare and again in the final vote;
+    a tap in the same step replaces the earlier one. Locked during the speeches and after the count."""
     d = room["debate"]
     p = room["people"].get(pid)
-    if p is None or stance not in STANCES or d["stage"] != "run" or role(room, p["team"]) != "panel":
+    if p is None or stance not in SIDES or d["stage"] != "run" or role(room, p["team"]) != "panel":
         return False
-    if at_result(room):
+    field = vote_field(room)
+    if field is None:
         return False
-    v = _votes(room, d["r"]).setdefault(pid, {"pre": None, "now": None, "moves": 0})
-    if snapshot_taken(room):
-        if v["pre"] is None:                   # joined after the opening began
-            v["pre"] = "und"
-        if v["now"] != stance:
-            v["moves"] += 1
-    v["now"] = stance
+    _votes(room, d["r"]).setdefault(pid, {})[field] = stance
     return True
 
 
@@ -353,41 +335,45 @@ def react(room: dict, pid: str, emoji: str, now: float | None = None) -> bool:
 
 
 # ---------------------------------------------------------------------------- counting
+def _side(x) -> str | None:
+    return x if x in SIDES else None          # older rooms may hold "und" or other keys
+
+
 def tally(room: dict, r: int | None = None) -> dict:
-    """Where the panel stood before and stands now, and who won: the side with more of the panel on it
-    at the end; if that is level, the side that gained more since the start."""
+    """Compare each side before and after. `won` counts the panel members who switched to a side between the
+    two votes; the side that won over more of them wins. If that is level (nobody switched, or as many each
+    way), the side with more votes at the end wins. Someone who does not vote again keeps their first vote."""
     d = room["debate"]
     r = d["r"] if r is None else r
     votes = d["votes"].get(str(r), {})
     people = panel(room, r)
-    snap = snapshot_taken(room, r)
-    before = {s: 0 for s in STANCES}
-    after = {s: 0 for s in STANCES}
-    picked = moved = changes = 0
+    before = {s: 0 for s in SIDES}
+    after = {s: 0 for s in SIDES}
+    won = {s: 0 for s in SIDES}
+    picked = voted = 0
     for p in people:
         v = votes.get(p["id"]) or {}
-        now_ = v.get("now")
-        if now_:
+        pre, post = _side(v.get("pre")), _side(v.get("post"))
+        if pre:
+            before[pre] += 1
             picked += 1
-        pre = (v.get("pre") or "und") if snap else (now_ or "und")
-        cur = now_ or "und"
-        before[pre] += 1
-        after[cur] += 1
-        if snap and pre != cur:
-            moved += 1
-        changes += v.get("moves", 0) if snap else 0
-    swing = {s: after[s] - before[s] for s in SIDES}
-    if after["for"] != after["against"]:
-        winner = "for" if after["for"] > after["against"] else "against"
-        how = "count"
-    elif swing["for"] != swing["against"]:
-        winner = "for" if swing["for"] > swing["against"] else "against"
-        how = "swing"
+        if post:
+            voted += 1
+        end = post or pre
+        if end:
+            after[end] += 1
+        if pre and post and pre != post:
+            won[post] += 1
+    if won["for"] != won["against"]:
+        winner, how = ("for" if won["for"] > won["against"] else "against"), "swing"
+    elif after["for"] != after["against"]:
+        winner, how = ("for" if after["for"] > after["against"] else "against"), "count"
     else:
         winner, how = None, "tie"
     reacts = d["reacts"].get(str(r), {"for": {}, "against": {}})
-    return {"n": len(people), "picked": picked, "before": before, "after": after, "moved": moved, "changes": changes,
-            "swing": swing, "winner": winner, "how": how, "reacts": reacts, "snap": snap}
+    return {"n": len(people), "picked": picked, "voted": voted, "before": before, "after": after, "won": won,
+            "moved": won["for"] + won["against"], "swing": {s: after[s] - before[s] for s in SIDES},
+            "winner": winner, "how": how, "reacts": reacts}
 
 
 def recent_feed(room: dict, now: float | None = None, window: float = 3.6) -> list[list]:
