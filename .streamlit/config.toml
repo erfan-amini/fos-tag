@@ -20,5 +20,11 @@ toolbarMode = "minimal"
 [server]
 enableStaticServing = true
 
+[runner]
+# Streamlit runs a full garbage collection after every script run by default. Every phone refreshes
+# every 2 s, so with 40 phones that is 20 full collections a second, which saturated the server
+# (84% of its time in a profile). Python's own garbage collector still runs as usual.
+postScriptGC = false
+
 [browser]
 gatherUsageStats = false
