@@ -671,6 +671,20 @@ def _stance_buttons(room: dict, pid: str, options: list[tuple[str, str]], final:
                     _do(code, lambda r, s=s: L.set_stance(r, pid, s, final))
 
 
+def _react(code: str, pid: str, emoji: str) -> bool:
+    """Count a reaction in memory, without writing the rooms file: taps come fast, and losing a few on a restart
+    does not matter. Uses the store's lock directly, so it also works with a Store object that was created
+    before a code update (Streamlit Cloud can reload the code and keep the old object)."""
+    store = get_store()
+    with store.lock:
+        room = store.rooms.get(code.upper())
+        if room is None:
+            return False
+        ok = L.react(room, pid, emoji)
+        room["updated"] = time.time()
+        return ok
+
+
 def _react_buttons(room: dict, pid: str, team: str):
     code = room["code"]
     with st.container(key="grid_rx"):
@@ -679,9 +693,8 @@ def _react_buttons(room: dict, pid: str, team: str):
             with col:
                 with st.container(key=f"dbt_rx_{k}"):
                     if st.button(emo, key=f"dbt_rxb_{k}", width="stretch", help=label):
-                        ok = []
-                        get_store().update(code, lambda r, k=k: ok.append(L.react(r, pid, k)), save=False)
-                        st.session_state["dbt_sent"] = (f"{emo} sent to {team}" if ok and ok[0] else "One at a time…", time.time())
+                        ok = _react(code, pid, k)
+                        st.session_state["dbt_sent"] = (f"{emo} sent to {team}" if ok else "One at a time…", time.time())
                         st.rerun(scope="fragment")
                 st.html(f'<div class="dbt-cap">{label}</div>')
     sent = st.session_state.get("dbt_sent")
