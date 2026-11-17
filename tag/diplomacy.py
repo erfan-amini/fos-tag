@@ -418,7 +418,7 @@ def render():
     with hc:
         st.html(f'<div class="tb">{ui.topbar_html("Nuclear Diplomacy", "Physics and Peace")}{round_html()}</div>')
     with mc:
-        ui.music("tension.mp3")
+        ui.music("tension.mp3", full_screen=True)
     sfx = st.empty()
     nav, stg = st.columns([1.15, 1], vertical_alignment="center")
     with nav:

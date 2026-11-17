@@ -53,6 +53,19 @@ header[data-testid="stHeader"] [role="menu"], header[data-testid="stHeader"] [ro
 .block-container {padding-top:.8rem !important; padding-bottom:1.2rem !important; max-width:1360px;}
 [data-testid="stMain"] [data-testid="stVerticalBlock"] {gap:.65rem;}
 [data-testid="stAudio"] {display:none;}
+/* Esc makes Streamlit move keyboard focus to the main element, and the browser then outlines the whole
+   page: a grey line across the top bar. The page itself never needs a focus ring.
+   (No angle brackets in this style block: Streamlit's HTML cleaner drops a style block that contains them.) */
+[data-testid="stMain"]:focus, [data-testid="stMain"]:focus-visible {outline:none !important;}
+[data-testid="stMain"]::before, [data-testid="stMain"]::after {box-shadow:none !important;}
+/* full-screen button beside the Music switch on the boards */
+[class*="st-key-music_switch"] [data-testid="stElementContainer"]:has(.fs-btn) {flex:0 0 auto; width:auto !important; min-width:2.2rem;}
+.fs-btn {flex:none; min-width:2.1rem; display:inline-flex; align-items:center; justify-content:center; width:2.1rem; height:2.1rem; padding:0;
+  border:1px solid var(--line); border-radius:.55rem; background:#fff; cursor:pointer;}
+.fs-btn:hover {border-color:var(--blue); background:var(--panel);}
+.fs-btn img {width:1.05rem; height:1.05rem;}
+.fs-btn .out {display:none;}
+html.fos-fs .fs-btn .in {display:none;} html.fos-fs .fs-btn .out {display:inline;}
 a {text-decoration:none;}
 
 /* top bar */
@@ -175,6 +188,18 @@ TOP_NAV_JS = r"""
   window.addEventListener('message', function (e) {
     if (e.data === 'fos-home') { goPage('/'); }
   });
+  // Full screen through the browser's own API, so Esc leaves it as usual (F11 full screen ignores Esc).
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('.fs-btn') : null;
+    if (!b) { return; }
+    e.preventDefault();
+    var d = document, el = d.documentElement;
+    if (d.fullscreenElement) { if (d.exitFullscreen) { d.exitFullscreen(); } }
+    else if (el.requestFullscreen) { el.requestFullscreen().catch(function () {}); }
+  }, true);
+  document.addEventListener('fullscreenchange', function () {
+    document.documentElement.classList.toggle('fos-fs', !!document.fullscreenElement);
+  });
 })();
 </script>
 """
@@ -197,12 +222,30 @@ def topbar(title: str = "", subtitle: str = "", home: bool = True):
     st.html(f'<div class="tb">{topbar_html(title, subtitle, home)}</div>')
 
 
-def music(track: str, default: bool = False, label: str = "Music"):
-    """A looping background track with a switch. Hidden audio element, so only the switch shows."""
+_FS_IN = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#0C2340" stroke-width="2.2" '
+          'stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>')
+_FS_OUT = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#0C2340" stroke-width="2.2" '
+           'stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>')
+
+
+def _svg_uri(svg: str) -> str:
+    return "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode()
+
+
+FS_BUTTON = (f'<button class="fs-btn" type="button" title="Full screen (Esc to leave)" aria-label="Full screen">'
+             f'<img class="in" src="{_svg_uri(_FS_IN)}" alt=""><img class="out" src="{_svg_uri(_FS_OUT)}" alt=""></button>')
+
+
+def music(track: str, default: bool = False, label: str = "Music", full_screen: bool = False):
+    """A looping background track with a switch. Hidden audio element, so only the switch shows.
+    On the boards a full-screen button sits beside it."""
     key = f"music_{track}"
     on = st.session_state.setdefault("music_on", default)
-    with st.container(key="music_switch"):
+    with st.container(key="music_switch", horizontal=True, vertical_alignment="center", gap="small",
+                      horizontal_alignment="right", wrap=False):
         on = st.toggle(label, value=on, key=f"music_t_{track}", help="Background music for the room")
+        if full_screen:
+            st.html(FS_BUTTON, width="content")
     st.session_state["music_on"] = on
     if on:
         with st.container(key=key):

@@ -83,7 +83,7 @@ def board(room: dict):
     with c1:
         ui.topbar(TITLE, room.get("title") or f"Room {room['code']}")
     with c2:
-        ui.music("lobby.mp3")
+        ui.music("lobby.mp3", full_screen=True)
     with c3:
         rooms.board_tools(room, PATH)
     html, url = rooms.board_code_html(PATH, room["code"])
