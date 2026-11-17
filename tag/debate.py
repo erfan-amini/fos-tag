@@ -82,7 +82,7 @@ CSS = """
 .dbt-side .tm {font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:3.2rem; line-height:.95;}
 .dbt-side .cap {font-size:1.05rem; opacity:.92; margin-top:.1rem;}
 .dbt-side .mem {font-size:.92rem; opacity:.8; margin-top:.35rem; line-height:1.3;}
-.dbt-side .rx {display:flex; gap:.9rem; margin-top:.55rem; font-size:1.25rem; font-family:"Barlow Condensed",sans-serif; font-weight:600;}
+.dbt-side .rx {display:flex; flex-wrap:wrap; gap:.35rem .5rem; margin-top:.55rem; font-size:1.2rem; font-family:"Barlow Condensed",sans-serif; font-weight:600;}
 .dbt-side .rx span {background:rgba(255,255,255,.14); border-radius:999px; padding:.05rem .6rem .05rem .45rem;}
 .dbt-side .badge {position:absolute; top:.8rem; left:.8rem; background:#FFD43B; color:#3b2f00; font-weight:700; font-size:.85rem;
                   letter-spacing:.1em; text-transform:uppercase; padding:.25rem .7rem; border-radius:999px;}
@@ -146,7 +146,7 @@ CSS = """
 .dbt-line .l small {display:block; font-size:.74rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);}
 .dbt-line .l b {font-family:"Barlow Condensed",sans-serif; font-size:1.4rem; line-height:1.05;}
 .dbt-line .l b.for {color:var(--for);} .dbt-line .l b.against {color:var(--against);}
-.dbt-cap {font-size:.72rem; color:var(--muted); text-align:center; line-height:1.1; margin-top:-.35rem;}
+.dbt-cap {font-size:.8rem; color:var(--muted); text-align:center; line-height:1.1; margin-top:-.35rem;}
 .dbt-sent {text-align:center; color:var(--muted); font-size:.9rem; min-height:1.2rem;}
 [class*="st-key-dbt_s_"] button {min-height:4rem; border-width:2px; border-style:solid; font-weight:700; background:#fff;}
 [class*="st-key-dbt_s_"] button p {font-size:1.12rem; font-weight:700;}
@@ -160,7 +160,7 @@ CSS = """
 [class*="st-key-dbt_s_"][class*="_off"] button:is(:hover, :focus, :active) {background:#fff !important;}
 [class*="st-key-dbt_s_for_off"] button p {color:var(--for) !important;} [class*="st-key-dbt_s_against_off"] button p {color:var(--against) !important;}
 [class*="st-key-dbt_s_und_off"] button p {color:#5E6878 !important;}
-[class*="st-key-dbt_rx_"] button {min-height:4.2rem; background:#fff; border:2px solid var(--line); border-radius:14px;}
+[class*="st-key-dbt_rx_"] button {min-height:3.6rem; background:#fff; border:2px solid var(--line); border-radius:14px;}
 [class*="st-key-dbt_rx_"] button p {font-size:2.1rem; line-height:1;}
 [class*="st-key-dbt_rx_"] button:active {transform:scale(.92); background:#FFF6D6;}
 [class*="st-key-dbt_t_"] button {min-height:3.6rem; border:2px solid var(--line); background:#fff; font-weight:700;}
@@ -687,16 +687,17 @@ def _react(code: str, pid: str, emoji: str) -> bool:
 
 def _react_buttons(room: dict, pid: str, team: str):
     code = room["code"]
-    with st.container(key="grid_rx"):
-        cols = st.columns(len(L.EMOJI))
-        for col, (k, emo, label) in zip(cols, L.EMOJI):
-            with col:
-                with st.container(key=f"dbt_rx_{k}"):
-                    if st.button(emo, key=f"dbt_rxb_{k}", width="stretch", help=label):
-                        ok = _react(code, pid, k)
-                        st.session_state["dbt_sent"] = (f"{emo} sent to {team}" if ok else "One at a time…", time.time())
-                        st.rerun(scope="fragment")
-                st.html(f'<div class="dbt-cap">{label}</div>')
+    for start in range(0, len(L.EMOJI), 3):                 # three to a row, so the labels stay readable on a phone
+        with st.container(key=f"grid_rx_{start}"):
+            cols = st.columns(3)
+            for col, (k, emo, label) in zip(cols, L.EMOJI[start:start + 3]):
+                with col:
+                    with st.container(key=f"dbt_rx_{k}"):
+                        if st.button(emo, key=f"dbt_rxb_{k}", width="stretch", help=label):
+                            ok = _react(code, pid, k)
+                            st.session_state["dbt_sent"] = (f"{emo} sent to {team}" if ok else "One at a time…", time.time())
+                            st.rerun(scope="fragment")
+                    st.html(f'<div class="dbt-cap">{label}</div>')
     sent = st.session_state.get("dbt_sent")
     st.html(f'<div class="dbt-sent">{sent[0] if sent and time.time() - sent[1] < 4 else "Tap as often as you like."}</div>')
 

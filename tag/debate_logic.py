@@ -14,12 +14,14 @@ SIDES = ("for", "against")
 STANCES = ("for", "und", "against")
 STANCE_LABEL = {"for": "For", "und": "Not sure", "against": "Against"}
 
-# key, emoji, what it means. Two about quality, one about novelty, one doubt.
+# key, emoji, what it means. Erfan's pick: two for a good argument, two for being moved, two for doubt.
 EMOJI = [
-    ("clap", "👏", "Strong point"),
-    ("data", "📊", "Good evidence"),
-    ("idea", "💡", "New to me"),
+    ("agree", "👍", "Agree"),
+    ("fire", "🔥", "Great rebuttal"),
+    ("wow", "😮", "Surprising"),
+    ("turn", "🔄", "Changing my mind"),
     ("hmm", "🤔", "Not convinced"),
+    ("really", "🤨", "Really?"),
 ]
 EMOJI_CHAR = {k: e for k, e, _ in EMOJI}
 REACT_COOLDOWN = 1.2          # seconds between two reactions from one phone

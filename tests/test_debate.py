@@ -107,20 +107,20 @@ def test_tie_goes_to_the_side_that_moved_more(tmp_path):
 def test_reactions_only_from_the_panel_during_a_speech(tmp_path):
     _, room = make_room(tmp_path)
     L.start_resolution(room, 0)
-    assert not L.react(room, "eli", "clap", 10)           # nobody is speaking during preparation
+    assert not L.react(room, "eli", "agree", 10)           # nobody is speaking during preparation
     L.go_seg(room, 1)                                     # opening, for
-    assert not L.react(room, "cleo", "clap", 10)          # the other debating team cannot react
-    assert L.react(room, "eli", "clap", 10)
-    assert not L.react(room, "eli", "data", 10.5)         # too fast
-    assert L.react(room, "eli", "data", 12) and L.react(room, "gus", "clap", 12)
+    assert not L.react(room, "cleo", "agree", 10)          # the other debating team cannot react
+    assert L.react(room, "eli", "agree", 10)
+    assert not L.react(room, "eli", "fire", 10.5)         # too fast
+    assert L.react(room, "eli", "fire", 12) and L.react(room, "gus", "agree", 12)
     assert not L.react(room, "gus", "nope", 20)
     L.go_seg(room, 2)                                     # opening, against
     assert L.react(room, "fay", "hmm", 30)
     t = L.tally(room)
-    assert t["reacts"]["for"] == {"clap": 2, "data": 1} and t["reacts"]["against"] == {"hmm": 1}
+    assert t["reacts"]["for"] == {"agree": 2, "fire": 1} and t["reacts"]["against"] == {"hmm": 1}
     assert [f[1] for f in L.recent_feed(room, 31)] == ["hmm"]
     for i in range(200):
-        L.react(room, "fay", "clap", 100 + 2 * i)
+        L.react(room, "fay", "agree", 100 + 2 * i)
     assert len(room["debate"]["feed"]) == L.FEED_KEEP
 
 
@@ -130,7 +130,7 @@ def test_room_survives_the_store(tmp_path):
     store.update(code, lambda r: L.start_resolution(r, 0))
     store.update(code, lambda r: L.set_stance(r, "eli", "for"))
     store.update(code, lambda r: L.go_seg(r, 1))
-    store.update(code, lambda r: L.react(r, "eli", "clap"), save=False)
+    store.update(code, lambda r: L.react(r, "eli", "agree"), save=False)
     again = Store(tmp_path / "rooms.json").get(code)      # what a restarted server would read
     assert again["debate"]["seg"] == 1 and again["debate"]["votes"]["0"]["eli"]["pre"] == "for"
     L.remove_person(room, "eli")
