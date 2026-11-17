@@ -1,6 +1,6 @@
 # FroSci Seminar Kit: tools for Frontiers of Science seminars
 
-One Streamlit app for the seminar room, at **frosci-seminar-kit.streamlit.app**. A Home button at
+One Streamlit app for the seminar room, at **fos-ict.streamlit.app**. A Home button at
 the top of every page; no side menus.
 
 | Page | What it does |
