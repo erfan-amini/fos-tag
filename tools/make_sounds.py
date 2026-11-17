@@ -6,8 +6,11 @@
   drumroll.mp3   snare roll with a crescendo, for the attack draw
   explosion.mp3  the hit
   pop.mp3        a small pop when a pair joins
+  bell.mp3       a desk bell, when a debate clock runs out
+  gavel.mp3      two knocks, when the debate votes are counted
 
-Run from the repo root:  python tools/make_sounds.py
+Run from the repo root:  python tools/make_sounds.py            (all of them)
+                         python tools/make_sounds.py bell gavel (only these)
 Needs numpy, scipy and ffmpeg (for the mp3 step).
 """
 from __future__ import annotations
@@ -301,6 +304,37 @@ def make_pop():
     return normalize(y, 0.8)
 
 
+# ------------------------------------------------------------------ 6. bell
+def make_bell():
+    """A desk bell struck twice: a few inharmonic partials with slow decays."""
+    def strike(dur=1.9):
+        n = int(dur * SR)
+        y = np.zeros(n)
+        for mult, amp, tau in ((1.0, 1.0, 0.75), (2.76, 0.55, 0.42), (5.4, 0.3, 0.22), (8.9, 0.16, 0.12)):
+            y += amp * sine(1568.0 * mult, n) * env_exp(n, tau)
+        click = highpass(rng.standard_normal(n), 3000) * env_exp(n, 0.004) * 0.5
+        return y + click
+    buf = np.zeros(int(2.5 * SR))
+    place(buf, strike(), 0.0)
+    place(buf, strike(), 0.42, 0.9)
+    return normalize(reverb(buf, 0.3, 0.12), 0.85)
+
+
+# ------------------------------------------------------------------ 7. gavel
+def make_gavel():
+    """Two knocks of wood on wood."""
+    def knock(dur=0.45):
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        body = np.sin(2 * np.pi * np.cumsum(170 + 260 * np.exp(-t * 60)) / SR) * env_exp(n, 0.07)
+        wood = bandpass(rng.standard_normal(n), 700, 2600) * env_exp(n, 0.018)
+        return body + 0.8 * wood
+    buf = np.zeros(int(1.5 * SR))
+    place(buf, knock(), 0.02)
+    place(buf, knock(), 0.36, 1.1)
+    return normalize(reverb(soft_clip(buf, 1.6), 0.35, 0.2), 0.95)
+
+
 # ------------------------------------------------------------------ write
 def write(name: str, y: np.ndarray):
     wav = OUT / f"{name}.wav"
@@ -321,8 +355,9 @@ def write(name: str, y: np.ndarray):
 
 
 if __name__ == "__main__":
-    write("lobby", make_lobby())
-    write("tension", make_tension())
-    write("drumroll", make_drumroll())
-    write("explosion", make_explosion())
-    write("pop", make_pop())
+    import sys
+
+    makers = {"lobby": make_lobby, "tension": make_tension, "drumroll": make_drumroll, "explosion": make_explosion,
+              "pop": make_pop, "bell": make_bell, "gavel": make_gavel}
+    for name in (sys.argv[1:] or list(makers)):
+        write(name, makers[name]())

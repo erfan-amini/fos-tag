@@ -84,15 +84,17 @@ class Store:
             rs = [r for r in self.rooms.values() if r["kind"] == kind]
         return sorted(rs, key=lambda r: -r["updated"])
 
-    def update(self, code: str, fn) -> dict | None:
-        """Run fn(room) under the lock, stamp the room and save. Returns the room."""
+    def update(self, code: str, fn, save: bool = True) -> dict | None:
+        """Run fn(room) under the lock, stamp the room and save. Returns the room.
+        save=False keeps a small, frequent change (an emoji reaction) in memory only; the next saved change writes it."""
         with self.lock:
             room = self.rooms.get(code.upper())
             if room is None:
                 return None
             fn(room)
             room["updated"] = now()
-            self._save()
+            if save:
+                self._save()
             return room
 
     def delete_room(self, code: str):

@@ -9,6 +9,7 @@ the top of every page; no side menus.
 | **Two-Point Threshold** | Start a room; the board shows a 4-letter code and a QR. Pairs scan it, type their names, pick one of 11 symbols and a colour, and enter three thumb and three forearm readings for each participant. The board shows the class dot plots, the means, the 95% intervals (mean ± 2 SE) and whether they overlap, live. Export to Excel any time: raw readings, per-person means, summary numbers and the plot. |
 | **Ballooniverse** | Same joining flow. Pairs enter the initial and final distance of three dots and the wavy line; the instructor sets the inflation time when starting the room (default 10 s). Every dot lands on the class graph of velocity against final distance, with a trend line through the origin and its slope. Export to Excel. |
 | **Nuclear Diplomacy** | The K=1 Project simulation, moderated from the projector: decision slips, the attack draw with a drumroll and a needle, sanctions, history, debrief. Background music, drumroll and explosion are switches in Settings. |
+| **Debate** (`/debate`) | Two teams argue each resolution, for and against; everybody else is the panel. Students scan the QR, type a first name and pick a team. The board shows the resolution, the two sides, a clock for each step (prepare, opening, rebuttal, closing, vote) and where the panel stands. Panel members pick a side before the opening, react to each speech with four emoji (strong point, good evidence, new to me, not convinced), change sides while they listen, and give a final vote. The result shows the split before and after, and how many changed their mind. Texts and times are set when the room starts and can be edited later from the Room menu; the defaults are the two resolutions of Molecules and Life 2. |
 
 ## How the live rooms work
 
@@ -58,3 +59,11 @@ Nuclear Diplomacy: game design, rules and country briefs by the K=1 Project, Col
 University (k1project.columbia.edu). Flags from Wikimedia Commons (public domain).
 Castle Bravo photograph: U.S. Department of Energy (public domain). Campus and reading
 room photographs: Columbia University.
+
+## Pictures in the Debate tool
+
+- Raphael, *The School of Athens* (1509 to 1511). Public domain, through Wikimedia Commons.
+- National Cancer Institute, public domain, through Wikimedia Commons: "Mammography patient"
+  (Bill Branson), "Researcher uses pipettes" and "Patient receives chemotherapy" (Rhoda Baer),
+  "Monoclonal antibodies (1)" (Linda Bartlett).
+- Gavel, Smithsonian American Art Museum, object 1906.9.25. CC0, through Wikimedia Commons.

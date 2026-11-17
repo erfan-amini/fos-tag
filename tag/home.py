@@ -18,7 +18,7 @@ CSS = """
 .hero p {margin:.5rem 0 0; opacity:.9; font-size:1.05rem; max-width:50rem;}
 .hero .band {position:absolute; right:1.2rem; top:1.2rem; height:46px; border-radius:8px; opacity:.9;}
 
-.cards {display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:1.1rem; margin-top:1.1rem;}
+.cards {display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:1rem; margin-top:1.1rem;}
 .cd {display:flex; flex-direction:column; background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden;
      box-shadow:0 2px 12px rgba(12,35,64,.06); color:var(--ink) !important; transition:transform .15s, box-shadow .15s; min-height:100%%;}
 .cd:hover {transform:translateY(-3px); box-shadow:0 12px 28px rgba(12,35,64,.16);}
@@ -27,12 +27,13 @@ CSS = """
 .cd .tag {position:absolute; left:.8rem; top:.8rem; z-index:1; background:rgba(255,255,255,.92); color:var(--navy); font-size:.72rem;
           font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:.22rem .55rem; border-radius:999px;}
 .cd .bd {padding:.9rem 1rem 1rem; display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex:1;}
-.cd h3 {font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:1.5rem; margin:0; color:var(--navy); line-height:1.05;}
+.cd h3 {font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:1.4rem; margin:0; color:var(--navy); line-height:1.05;}
 .cd p {margin:0; color:var(--muted); font-size:.93rem; line-height:1.4; flex:1;}
 .cd .go {color:var(--blue); font-weight:600; font-size:.92rem; white-space:nowrap;}
 .cd .go::after {content:" \\2192";}
 .foot {margin-top:1.2rem; color:var(--muted); font-size:.85rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem;}
-@media (max-width:1000px){ .cards {grid-template-columns:repeat(2, minmax(0, 1fr));} }
+@media (max-width:1150px){ .cards {grid-template-columns:repeat(3, minmax(0, 1fr));} }
+@media (max-width:800px){ .cards {grid-template-columns:repeat(2, minmax(0, 1fr));} }
 @media (max-width:640px){ .cards {grid-template-columns:1fr;} .hero h1 {font-size:2.3rem;} .hero .band {display:none;} }
 </style>
 """
@@ -46,6 +47,8 @@ CARDS = [
      "Hubble's law appears on the screen as the room fills in.", "/ballooniverse", "balloon.png"),
     ("Physics and Peace", "Nuclear Diplomacy", "Five countries, five rounds. Enter the decision slips, run the attack draw, "
      "handle sanctions, then debrief.", "/diplomacy", "castle_bravo.jpg"),
+    ("Molecules and Life", "Debate", "Two teams argue a resolution. The panel picks a side, reacts from their phones, "
+     "changes sides and votes.", "/debate", "debate_athens_s.jpg"),
 ]
 
 
