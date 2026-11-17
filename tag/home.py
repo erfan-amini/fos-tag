@@ -47,8 +47,8 @@ CARDS = [
      "Hubble's law appears on the screen as the room fills in.", "/ballooniverse", "balloon.png"),
     ("Physics and Peace", "Nuclear Diplomacy", "Five countries, five rounds. Enter the decision slips, run the attack draw, "
      "handle sanctions, then debrief.", "/diplomacy", "castle_bravo.jpg"),
-    ("Molecules and Life", "Debate", "Two teams argue a resolution. The panel picks a side, reacts from their phones, "
-     "changes sides and votes.", "/debate", "debate_athens_s.jpg"),
+    ("Molecules and Life", "Debate", "Two teams argue a resolution. The panel picks a side, reacts from their phones "
+     "and changes sides; where they end up decides it.", "/debate", "debate_athens_s.jpg"),
 ]
 
 

@@ -7,7 +7,7 @@
   explosion.mp3  the hit
   pop.mp3        a small pop when a pair joins
   bell.mp3       a desk bell, when a debate clock runs out
-  gavel.mp3      two knocks, when the debate votes are counted
+  gavel.mp3      two knocks, when the debate sides are counted
 
 Run from the repo root:  python tools/make_sounds.py            (all of them)
                          python tools/make_sounds.py bell gavel (only these)

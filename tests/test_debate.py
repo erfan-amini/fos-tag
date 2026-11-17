@@ -25,7 +25,8 @@ def test_preset_follows_the_slides():
     r1, r2 = s["resolutions"]
     assert (r1["for"], r1["against"], r2["for"], r2["against"]) == (1, 2, 3, 4)
     segs = L.segments(s)
-    assert [x["dur"] for x in segs] == [300, 120, 120, 60, 60, 60, 60, 30, 0]
+    assert [x["dur"] for x in segs] == [300, 120, 120, 60, 60, 60, 60, 0]
+    assert [x["key"] for x in segs][-2:] == ["close", "result"]      # no separate vote
     assert [x["side"] for x in segs[1:7]] == ["for", "against"] * 3
     blank = L.default_settings("blank", teams=3, n_res=3)
     assert all(r["for"] != r["against"] for r in blank["resolutions"])
@@ -62,7 +63,7 @@ def test_clock():
     assert len({L.new_timer(5)["v"], t["v"]}) == 2      # every change gives the clock a new key
 
 
-def test_panel_picks_changes_and_votes(tmp_path):
+def test_panel_picks_and_changes_sides_until_the_count(tmp_path):
     _, room = make_room(tmp_path)
     L.start_resolution(room, 0)
     assert not L.set_stance(room, "ana", "for")          # a debater cannot vote
@@ -76,16 +77,27 @@ def test_panel_picks_changes_and_votes(tmp_path):
     L.set_stance(room, "fay", "for")                      # changed sides
     L.set_stance(room, "fay", "for")                      # tapping the same side again is not a move
     assert room["debate"]["votes"]["0"]["fay"]["moves"] == 1
-    L.go_seg(room, L.SEG_VOTE)
-    assert L.timer_running(room["debate"]["timer"])       # the vote clock starts by itself
-    L.set_stance(room, "ivy", "against", final=True)
-    L.go_seg(room, L.SEG_RESULT)
-    assert not L.set_stance(room, "eli", "against")       # closed
+    L.go_seg(room, L.SEG_LAST_SPEECH)
+    assert L.set_stance(room, "ivy", "against")           # still open during the last speech
+    L.go_seg(room, L.SEG_RESULT)                          # the host counts: the sides close
+    assert not L.set_stance(room, "eli", "against")
     t = L.tally(room)
     assert t["after"] == {"for": 3, "und": 0, "against": 2}
     assert t["before"] == {"for": 1, "und": 2, "against": 2}
-    assert (t["winner"], t["how"], t["moved"], t["final"]) == ("for", "votes", 3, 1)
+    assert (t["winner"], t["how"], t["moved"], t["changes"]) == ("for", "count", 3, 3)
     assert t["swing"] == {"for": 2, "against": 0}
+    L.go_seg(room, L.SEG_LAST_SPEECH)                     # back one step opens the sides again
+    assert L.set_stance(room, "eli", "against")
+
+
+def test_a_room_saved_with_the_old_vote_step_still_opens(tmp_path):
+    _, room = make_room(tmp_path)
+    L.start_resolution(room, 0)
+    room["debate"]["seg"] = 8                             # the old result step
+    assert L.at_result(room) and L.current_seg(room)["key"] == "result"
+    assert not L.set_stance(room, "eli", "for")
+    L.go_seg(room, L.SEG_LAST_SPEECH)
+    assert room["debate"]["seg"] == 6 and L.set_stance(room, "eli", "for")
 
 
 def test_tie_goes_to_the_side_that_moved_more(tmp_path):
