@@ -38,16 +38,16 @@ ML2 = {
     "label": "Molecules and Life 2: cancer, money and ethics",
     "resolutions": [
         {"title": "You set the cancer budget", "scene": "",
-         "text": "Governments should stop paying for cancer drugs that add less than a year of life, and fund "
-                 "prevention and screening instead.",
+         "text": "Governments should limit paying for cancer drugs that add less than a year of life, and fund "
+                 "prevention, screening, and new drug development instead.",
          "for": 1, "against": 2,
          "hint_for": "Cervical cancer: what a vaccine and screening did. How many people prevention reaches, and the "
                      "cost per person.",
          "hint_against": "The patient who is sick today cannot wait. First drugs lead to better ones: KRAS took forty "
                          "years, and now the door is open.",
          "img_for": "debate_prevention.jpg", "img_against": "debate_drug.jpg",
-         "cap_for": "Prevention and screening", "cap_against": "New drugs"},
-        {"title": "Is it fair to randomize?", "scene": "",
+         "cap_for": "Prevention, screening, research", "cap_against": "Drugs for today's patients"},
+        {"title": "The early results look very good", "scene": "",
          "text": "Once early results suggest a new drug works, it is unethical to randomize terminally ill "
                  "patients to standard treatment.",
          "for": 3, "against": 4,

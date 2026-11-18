@@ -7,4 +7,4 @@ matplotlib
 openpyxl
 qrcode[pil]
 pillow
-# Pinned on 2026-11-17 (no forced garbage collection after each run). Edit this line to force a rebuild.
+# Pinned on 2026-11-18 (new default resolution texts). Edit this line to force a rebuild.
